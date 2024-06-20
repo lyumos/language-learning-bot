@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE "examples" (
 	"id"	TEXT NOT NULL UNIQUE,
 	"word_id"	TEXT NOT NULL,
@@ -35,5 +33,3 @@ CREATE TABLE "words" (
 	"status"	TEXT NOT NULL,
 	PRIMARY KEY("id")
 );
-
-COMMIT;
