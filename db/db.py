@@ -11,8 +11,6 @@ class BotDB:
 
     def __init__(self, db_name, sql_script=None):
         self.db_name = db_name
-        # self.conn = None
-        # self.cursor = None
         if not os.path.exists(self.db_name):
             if sql_script:
                 self.create_db(sql_script)
@@ -112,3 +110,4 @@ if __name__ == "__main__":
     load_dotenv()
     db_name = os.getenv('DB_NAME')
     db = BotDB(db_name, 'db_creation.sql')
+    db.insert_new_word('try', 'noun', 'пытаться, пробовать')
