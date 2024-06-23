@@ -59,7 +59,6 @@ class FreeDictionaryAPI:
                     for definition in meaning['definitions']:
                         if 'example' in definition:
                             examples.append(definition['example'])
-                    # target_examples = {meaning['partOfSpeech']: examples}
                     target_examples = examples
                 elif category_choice == 'All':
                     for definition in meaning['definitions']:
