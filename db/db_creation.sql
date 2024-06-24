@@ -1,21 +1,3 @@
-CREATE TABLE "examples" (
-	"id"	TEXT NOT NULL UNIQUE,
-	"word_id"	TEXT NOT NULL,
-	"example"	TEXT NOT NULL,
-	"translation"	TEXT NOT NULL,
-	PRIMARY KEY("id"),
-	FOREIGN KEY("word_id") REFERENCES "words"("id")
-);
-
-CREATE TABLE "definitions" (
-	"id"	TEXT NOT NULL UNIQUE,
-	"word_id"	TEXT NOT NULL,
-	"definitions"	TEXT NOT NULL,
-	"language"	TEXT NOT NULL,
-	PRIMARY KEY("id"),
-	FOREIGN KEY("word_id") REFERENCES "words"("id")
-);
-
 CREATE TABLE "tests" (
 	"id"	TEXT NOT NULL UNIQUE,
 	"word_id"	TEXT NOT NULL,

@@ -36,18 +36,6 @@ class BotDB:
         self.conn.commit()
         return word_uuid
 
-    def insert_word_definitions(self, word_id, definitions, language):
-        definitions_uuid = uuid.uuid4()
-        self.conn.execute(f'INSERT INTO meanings (id, word_id, definitions, language)'
-                          f'VALUES ("{definitions_uuid}","{word_id}", "{definitions}", "{language}");')
-        self.conn.commit()
-
-    def insert_word_example(self, word_id, example, translation):
-        example_uuid = uuid.uuid4()
-        self.conn.execute(f'INSERT INTO examples (id, word_id, example, translation)'
-                          f'VALUES ("{example_uuid}","{word_id}", "{example}", "{translation}");')
-        self.conn.commit()
-
     def insert_new_test(self, word_id, status):
         test_uuid = uuid.uuid4()
         current_datetime = datetime.now()
@@ -64,30 +52,6 @@ class BotDB:
             translation = row["translation"]
         return word_id, word, category, translation
 
-    def select_meaning_by_word_id(self, word_id):  #возвращает словарь значение:язык
-        meanings_count_per_word = self.conn.execute(
-            f"SELECT count(id) AS count FROM meanings WHERE word_id = '{word_id}';").fetchall()
-        meanings = {}
-        for row in meanings_count_per_word:
-            count = int(row['count'])
-        for i in range(count):
-            meaning = self.conn.execute(f"SELECT * FROM meanings WHERE word_id = '{word_id}';").fetchall()
-            for row in meaning:
-                meanings[row["meaning"]] = row["language"]
-        return meanings
-
-    def select_example_by_word_id(self, word_id):  #возвращает словарь пример:перевод
-        examples_count_per_word = self.conn.execute(
-            f"SELECT count(id) AS count FROM examples WHERE word_id = '{word_id}';").fetchall()
-        examples = {}
-        for row in examples_count_per_word:
-            count = int(row['count'])
-        for i in range(count):
-            example = self.conn.execute(f"SELECT * FROM examples WHERE word_id = '{word_id}';").fetchall()
-            for row in example:
-                examples[row["example"]] = row["translation"]
-        return examples
-
     def update_word_status(self, word_id, status):
         self.conn.execute(f"UPDATE words SET status = '{status}' WHERE id = '{word_id}';")
         self.conn.commit()
@@ -100,8 +64,7 @@ class BotDB:
                 word = row["word"]
                 word_category = row["category"]
                 word_status = row["status"]
-            meaning_data = self.select_meaning_by_word_id(word_id)
-            return word, word_category, word_status, meaning_data
+            return word, word_category, word_status
         else:
             return None
 
