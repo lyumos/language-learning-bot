@@ -11,7 +11,6 @@ CREATE TABLE "words" (
 	"id"	TEXT NOT NULL UNIQUE,
 	"word"	TEXT NOT NULL,
 	"category" TEXT NOT NULL,
-	"translation" TEXT,
 	"status"	TEXT NOT NULL,
 	PRIMARY KEY("id")
 );
