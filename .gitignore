@@ -2,6 +2,7 @@
 *.log
 *.tmp
 *.db
+*.db-journal
 
 # Игнорировать файлы и папки, относящиеся к среде разработки
 .idea/
@@ -14,3 +15,4 @@ Thumbs.db
 # Игнорировать каталоги виртуальных окружений Python
 venv/
 __pycache__/
+/db/db_for_bot.db-journal
