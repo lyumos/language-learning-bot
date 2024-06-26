@@ -38,7 +38,7 @@ class BotDB:
     def insert_new_word(self, word, category):
         word_uuid = uuid.uuid4()
         self.conn.execute(f'INSERT INTO words (id, word, category, status)'
-                          f'VALUES ("{word_uuid}","{word}", "{category}", "new");')
+                          f'VALUES ("{word_uuid}","{word}", "{category}", "New");')
         self.conn.commit()
         return word_uuid
 
@@ -49,12 +49,12 @@ class BotDB:
                           f'VALUES ("{test_uuid}","{word_id}", "{status}", "{current_datetime}");')
         self.conn.commit()
 
-    def select_word_by_status(self, status):
-        data = self.conn.execute(f"SELECT * FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
-        for row in data:
-            word = row["word"]
-            category = row["category"]
-        return word, category
+    def select_words_by_status(self, status):
+        data = self.conn.execute(f"SELECT word, category FROM words WHERE status = '{status}' LIMIt 5;").fetchall()
+        # for row in data:
+        #     word = row["word"]
+        #     category = row["category"]
+        return data
 
     def update_word_status(self, word_id, status):
         self.conn.execute(f"UPDATE words SET status = '{status}' WHERE id = '{word_id}';")
@@ -73,5 +73,6 @@ if __name__ == "__main__":
     load_dotenv()
     db_name = os.getenv('DB_NAME')
     db = BotDB(db_name)
-    print(db.select_all_by_word('trepidation', 'Noun'))
-    print(db.db_path)
+    print(db.select_words_by_status('New'))
+    # print(db.select_all_by_word('trepidation', 'Noun'))
+    # print(db.db_path)
