@@ -24,7 +24,6 @@ db = BotDB(os.getenv('DB_NAME'))
 INACTIVITY_TIMEOUT = 60
 user_timers = {}
 allowed_user_id = os.getenv('ALLOWED_USER_ID').split(', ')
-print(allowed_user_id)
 
 
 async def reset_state(user_id, state: FSMContext):
@@ -172,7 +171,6 @@ async def continue_checking(message: Message, state: FSMContext):
 
 
 @router.message(
-    BotTypingHandler.new_word_handling,
     F.text.in_([f"{emoji.emojize(":chequered_flag:")}"])
 )
 async def start_over(message: Message, state: FSMContext):
@@ -192,35 +190,36 @@ async def learn_words(message: Message, state: FSMContext):
     if str(message.from_user.id) not in allowed_user_id:
         await message.answer("You are not authorized to use this bot.")
         return
-    # await message.reply(
-    #     text="Подбираю новые слова для изучения",
-    #     reply_markup=types.ReplyKeyboardRemove()
-    # )
-
-    word, category = db.select_words_by_status('New')
-    word_obj = LanguageProcessing(word)
-    definitions = word_obj.get_word_definitions(category)
-    translation = word_obj.get_word_translations(category)
-    print_definitions = bot_handler.prepare_sentences_for_print(definitions, category, translation)
-    await message.reply(
-        text=f"{print_definitions}",
-        reply_markup=bot_handler.show_keyboard(bot_handler.keyboards['next_step']),
-        parse_mode=ParseMode.HTML
-    )
-    await state.set_state(BotTypingHandler.learn_words_choice)
-
-
-@router.message(
-    BotTypingHandler.learn_words_choice,
-    F.text.in_([f"{emoji.emojize(":chequered_flag:")}"])
-)
-async def start_over(message: Message, state: FSMContext):
-    if str(message.from_user.id) not in allowed_user_id:
-        await message.answer("You are not authorized to use this bot.")
-        return
     await set_inactivity_timer(message.from_user.id, state)
-    await bot_handler.type_answer(message, bot_handler.bot_texts['square_one'], bot_handler.keyboards['init'])
-    await state.set_state(BotTypingHandler.start_mode_choice)
+
+    try:
+        words_to_learn = await bot_handler.get_state_info(state, 'words_to_learn')
+    except KeyError:
+        words_to_learn = []
+    if not isinstance(words_to_learn, list):
+        words_to_learn = []
+    try:
+        word_id, word, category = db.select_words_by_status('New')
+        words_to_learn.append(word_id)
+        await state.update_data(words_to_learn=words_to_learn)
+
+        word_obj = LanguageProcessing(word)
+        definitions = word_obj.get_word_definitions(category)
+        translation = word_obj.get_word_translations(category)
+        print_definitions = bot_handler.prepare_sentences_for_print(definitions, category, translation)
+        await message.reply(
+            text=f"<b>{word}</b>\n\n{print_definitions}",
+            reply_markup=bot_handler.show_keyboard(bot_handler.keyboards['next_step']),
+            parse_mode=ParseMode.HTML
+        )
+        await state.set_state(BotTypingHandler.learn_words_choice)
+    except IndexError:
+        await message.reply(
+            text=f"Looks like there are no words to study right now!\n\nAdd new words to your vocabulary collection to study later {emoji.emojize(":books:")}",
+            reply_markup=bot_handler.show_keyboard(bot_handler.keyboards['init']),
+            parse_mode=ParseMode.HTML
+        )
+        await state.set_state(BotTypingHandler.start_mode_choice)
 
 
 @router.message(
@@ -231,7 +230,65 @@ async def go_ahead(message: Message, state: FSMContext):
     if str(message.from_user.id) not in allowed_user_id:
         await message.answer("You are not authorized to use this bot.")
         return
+    await set_inactivity_timer(message.from_user.id, state)
 
+    words_to_learn = await bot_handler.get_state_info(state, 'words_to_learn')
+    if len(words_to_learn) < 5:
+        try:
+            word_id, word, category = db.select_words_by_status('New')
+            words_to_learn.append(word_id)
+
+            word_obj = LanguageProcessing(word)
+            definitions = word_obj.get_word_definitions(category)
+            translation = word_obj.get_word_translations(category)
+            print_definitions = bot_handler.prepare_sentences_for_print(definitions, category, translation)
+            await message.reply(
+                text=f"<b>{word}</b>\n\n{print_definitions}",
+                reply_markup=bot_handler.show_keyboard(bot_handler.keyboards['next_step']),
+                parse_mode=ParseMode.HTML
+            )
+            await state.set_state(BotTypingHandler.learn_words_choice)
+
+        except IndexError:
+            await message.reply(
+                text=f"Those were all the new words! Add more to study later. Let's take the quiz {emoji.emojize(":rocket:")}",
+                reply_markup=types.ReplyKeyboardRemove(),
+                parse_mode=ParseMode.HTML
+            )
+            await state.set_state(BotTypingHandler.quiz_time)
+
+    else:
+        await message.reply(
+            text=bot_handler.bot_texts['quiz_time'],
+            reply_markup=types.ReplyKeyboardRemove(),
+            parse_mode=ParseMode.HTML
+        )
+        await state.set_state(BotTypingHandler.quiz_time)
+
+
+@router.message(
+    BotTypingHandler.learn_words_choice,
+    F.text.in_(f"{emoji.emojize(":thinking_face:")}")
+)
+async def go_deeper_to_learn(message: Message, state: FSMContext):
+    if str(message.from_user.id) not in allowed_user_id:
+        await message.answer("You are not authorized to use this bot.")
+        return
+    await set_inactivity_timer(message.from_user.id, state)
+    await bot_handler.type_advanced_info(message, state, db)
+    await state.set_state(BotTypingHandler.learn_words_choice)
+
+
+@router.message(
+    BotTypingHandler.quiz_time,
+    F.text.in_([bot_handler.bot_texts['quiz_time']])
+)
+async def make_a_quiz(message: Message, state: FSMContext):
+    if str(message.from_user.id) not in allowed_user_id:
+        await message.answer("You are not authorized to use this bot.")
+        return
+    await set_inactivity_timer(message.from_user.id, state)
+    await bot_handler.type_answer(message, "Here's nothing, but I'm working on this!")
 
 @router.message(
     BotTypingHandler.start_mode_choice,

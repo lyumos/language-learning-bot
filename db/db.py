@@ -50,11 +50,9 @@ class BotDB:
         self.conn.commit()
 
     def select_words_by_status(self, status):
-        data = self.conn.execute(f"SELECT word, category FROM words WHERE status = '{status}' LIMIt 5;").fetchall()
-        # for row in data:
-        #     word = row["word"]
-        #     category = row["category"]
-        return data
+        data = self.conn.execute(f"SELECT id, word, category FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
+        self.update_word_status(data[0][0], 'Shown')
+        return data[0][0], data[0][1], data[0][2]
 
     def update_word_status(self, word_id, status):
         self.conn.execute(f"UPDATE words SET status = '{status}' WHERE id = '{word_id}';")
@@ -68,11 +66,19 @@ class BotDB:
         else:
             return None
 
+    def select_all_by_word_id(self, id):
+        word_data = self.conn.execute(
+            f"SELECT * FROM words WHERE id = '{id}';").fetchone()
+        if word_data:
+            return word_data
+        else:
+            return None
+
 
 if __name__ == "__main__":
     load_dotenv()
     db_name = os.getenv('DB_NAME')
     db = BotDB(db_name)
-    print(db.select_words_by_status('New'))
+    print(db.select_all_by_word_id('e9caa3db-e957-4f2b-922a-38074ec654ed'))
     # print(db.select_all_by_word('trepidation', 'Noun'))
     # print(db.db_path)

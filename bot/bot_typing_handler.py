@@ -14,6 +14,7 @@ class BotTypingHandler(StatesGroup):
     new_word_checking = State()
     new_word_printing = State()
     new_word_handling = State()
+    quiz_time = State()
 
     bot_texts = {
         'welcome': f"Hi {emoji.emojize(":vulcan_salute_light_skin_tone:")}\nNeed something? Choose from: check my word, other options in progress",
@@ -22,14 +23,18 @@ class BotTypingHandler(StatesGroup):
         'wrong_word': f"Whoops, that's not a real word!\n\nLet's try again {emoji.emojize(":ghost:")}",
         'word_type': f"Pick a part of speech or go wild - choose 'em all!",
         'word_added': f"Word's in! Added this one to the vocabulary collection!",
-        'square_one': "Back to square one, eh? Let's start fresh!"
+        'square_one': "Back to square one, eh? Let's start fresh!",
+        'quiz_time': f"That's all for now! Let's take a quiz {emoji.emojize(":rocket:")}"
     }
 
     keyboards = {'init': [f"Check my word {emoji.emojize(":magnifying_glass_tilted_left:")}", 'Learn', 'Repeat'],
                  'next_move': [f"{emoji.emojize(":left_arrow:")}", f"{emoji.emojize(":thinking_face:")}",
                                f"{emoji.emojize(":plus:")}", f"{emoji.emojize(":repeat_button:")}",
                                f"{emoji.emojize(":chequered_flag:")}"],
-                 'next_step': [f"{emoji.emojize(":right_arrow:")}", f"{emoji.emojize(":thinking_face:")}", f"{emoji.emojize(":chequered_flag:")}"]
+                 'next_step': [f"{emoji.emojize(":right_arrow:")}", f"{emoji.emojize(":thinking_face:")}",
+                               f"{emoji.emojize(":chequered_flag:")}"],
+                 'show_next_word_no_advanced': [f"{emoji.emojize(":right_arrow:")}",
+                                                f"{emoji.emojize(":chequered_flag:")}"]
                  }
 
     @staticmethod
@@ -40,7 +45,33 @@ class BotTypingHandler(StatesGroup):
     @staticmethod
     async def get_state_info(state, item):
         data = await state.get_data()
-        return data[f'{item}']
+        if data:
+            return data[f'{item}']
+        else:
+            return None
+
+    async def type_answer(self, message, answer, buttons=None):
+        if buttons:
+            await message.answer(
+                text=f"{answer}",
+                reply_markup=self.show_keyboard(buttons)
+            )
+        else:
+            await message.answer(
+                text=f"{answer}"
+            )
+
+    async def type_reply(self, message, reply, buttons=None):
+        if buttons:
+            await message.reply(
+                text=f"{reply}",
+                reply_markup=self.show_keyboard(buttons)
+            )
+        else:
+            await message.reply(
+                text=f"{reply}",
+                reply_markup=types.ReplyKeyboardRemove(),
+            )
 
     @staticmethod
     def prepare_sentences_for_print(sentences, choice, translations=None):
@@ -100,29 +131,6 @@ class BotTypingHandler(StatesGroup):
             else:
                 return ''
 
-    async def type_answer(self, message, answer, buttons=None):
-        if buttons:
-            await message.answer(
-                text=f"{answer}",
-                reply_markup=self.show_keyboard(buttons)
-            )
-        else:
-            await message.answer(
-                text=f"{answer}"
-            )
-
-    async def type_reply(self, message, reply, buttons=None):
-        if buttons:
-            await message.reply(
-                text=f"{reply}",
-                reply_markup=self.show_keyboard(buttons)
-            )
-        else:
-            await message.reply(
-                text=f"{reply}",
-                reply_markup=types.ReplyKeyboardRemove(),
-            )
-
     async def type_new_word_info(self, message, state, choice, definitions=None):
         new_word = await self.get_state_info(state, 'word')
         word = LanguageProcessing(new_word)
@@ -148,27 +156,48 @@ class BotTypingHandler(StatesGroup):
                 parse_mode=ParseMode.HTML
             )
 
-    async def type_advanced_info(self, message, state):
-        part_of_speech = await self.get_state_info(state, 'pt_of_speech')
-        word = await self.get_state_info(state, 'word')
-        word_info = LanguageProcessing(word)
-        # relations = word_info.get_relations(part_of_speech)
-        examples = word_info.get_word_examples(part_of_speech)
-        print_examples = self.prepare_sentences_for_print(examples, part_of_speech)
-        await state.update_data(examples=examples)
-        # await state.update_data(relations=relations)
-        if print_examples:
-            await message.reply(
-                text=f"{print_examples}\n\nWhat's your next move?",
-                reply_markup=self.show_keyboard(self.keyboards['next_move']),
-                parse_mode=ParseMode.HTML
-            )
+    async def type_advanced_info(self, message, state, db=None):
+        if not db:
+            part_of_speech = await self.get_state_info(state, 'pt_of_speech')
+            word = await self.get_state_info(state, 'word')
+
+            word_info = LanguageProcessing(word)
+            examples = word_info.get_word_examples(part_of_speech)
+            print_examples = self.prepare_sentences_for_print(examples, part_of_speech)
+            await state.update_data(examples=examples)
+            if print_examples:
+                await message.reply(
+                    text=f"{print_examples}\n\nWhat's your next move?",
+                    reply_markup=self.show_keyboard(self.keyboards['next_move']),
+                    parse_mode=ParseMode.HTML
+                )
+            else:
+                await message.reply(
+                    text=f"Looks like there\'s nothing here!\n\nWhat's your next move?",
+                    reply_markup=self.show_keyboard(self.keyboards['next_move']),
+                    parse_mode=ParseMode.HTML
+                )
         else:
-            await message.reply(
-                text=f"Looks like there\'s nothing here!\n\nWhat's your next move?",
-                reply_markup=self.show_keyboard(self.keyboards['next_move']),
-                parse_mode=ParseMode.HTML
-            )
+            words_to_learn = await self.get_state_info(state, 'words_to_learn')
+            word_id = words_to_learn[-1]
+            word_db_info = db.select_all_by_word_id(word_id)
+            word = word_db_info[1]
+            category = word_db_info[2]
+            word_info = LanguageProcessing(word)
+            examples = word_info.get_word_examples(category)
+            print_examples = self.prepare_sentences_for_print(examples, category)
+            if print_examples:
+                await message.reply(
+                    text=f"{print_examples}",
+                    reply_markup=self.show_keyboard(self.keyboards['show_next_word_no_advanced']),
+                    parse_mode=ParseMode.HTML
+                )
+            else:
+                await message.reply(
+                    text=f"Looks like there\'s nothing here!",
+                    reply_markup=self.show_keyboard(self.keyboards['show_next_word_no_advanced']),
+                    parse_mode=ParseMode.HTML
+                )
 
     async def add_word_to_db(self, message, state, db):
         new_word = await self.get_state_info(state, 'word')
