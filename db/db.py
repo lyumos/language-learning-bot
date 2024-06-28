@@ -40,7 +40,7 @@ class BotDB:
         self.conn.execute(f'INSERT INTO words (id, word, category, status)'
                           f'VALUES ("{word_uuid}","{word}", "{category}", "New");')
         self.conn.commit()
-        return word_uuid
+        # return word_uuid
 
     def insert_new_test(self, word_id, status):
         test_uuid = uuid.uuid4()

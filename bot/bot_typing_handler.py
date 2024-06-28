@@ -14,7 +14,7 @@ class BotTypingHandler(StatesGroup):
     new_word_checking = State()
     new_word_printing = State()
     new_word_handling = State()
-    quiz_time = State()
+    test_start = State()
 
     bot_texts = {
         'welcome': f"Hi {emoji.emojize(":vulcan_salute_light_skin_tone:")}\nNeed something? Choose from: check my word, other options in progress",
@@ -23,18 +23,24 @@ class BotTypingHandler(StatesGroup):
         'wrong_word': f"Whoops, that's not a real word!\n\nLet's try again {emoji.emojize(":ghost:")}",
         'word_type': f"Pick a part of speech or go wild - choose 'em all!",
         'word_added': f"Word's in! Added this one to the vocabulary collection!",
+        'no_examples_learn': f"Looks like there\'s nothing here!",
+        'no_examples_check': f"Looks like there\'s nothing here!\n\nWhat's your next move?",
         'square_one': "Back to square one, eh? Let's start fresh!",
+        'no_words_to_learn': f"Looks like there are no words to study right now!\n\nAdd new words to your vocabulary collection to study later {emoji.emojize(":books:")}",
+        'words_ended': f"Those were all the new words! Add more to study later. Let's take the quiz {emoji.emojize(":rocket:")}",
         'quiz_time': f"That's all for now! Let's take a quiz {emoji.emojize(":rocket:")}"
     }
 
-    keyboards = {'init': [f"Check my word {emoji.emojize(":magnifying_glass_tilted_left:")}", 'Learn', 'Repeat'],
+    keyboards = {'init': [f"Check my word {emoji.emojize(":magnifying_glass_tilted_left:")}",
+                          f'Learn {emoji.emojize(":nerd_face:")}', 'Repeat'],
                  'next_move': [f"{emoji.emojize(":left_arrow:")}", f"{emoji.emojize(":thinking_face:")}",
                                f"{emoji.emojize(":plus:")}", f"{emoji.emojize(":repeat_button:")}",
                                f"{emoji.emojize(":chequered_flag:")}"],
                  'next_step': [f"{emoji.emojize(":right_arrow:")}", f"{emoji.emojize(":thinking_face:")}",
                                f"{emoji.emojize(":chequered_flag:")}"],
                  'show_next_word_no_advanced': [f"{emoji.emojize(":right_arrow:")}",
-                                                f"{emoji.emojize(":chequered_flag:")}"]
+                                                f"{emoji.emojize(":chequered_flag:")}"],
+                 'happy_face': f"{emoji.emojize(":partying_face:")}"
                  }
 
     @staticmethod
@@ -54,23 +60,27 @@ class BotTypingHandler(StatesGroup):
         if buttons:
             await message.answer(
                 text=f"{answer}",
-                reply_markup=self.show_keyboard(buttons)
+                reply_markup=self.show_keyboard(buttons),
+                parse_mode=ParseMode.HTML
             )
         else:
             await message.answer(
-                text=f"{answer}"
+                text=f"{answer}",
+                parse_mode=ParseMode.HTML
             )
 
     async def type_reply(self, message, reply, buttons=None):
         if buttons:
             await message.reply(
                 text=f"{reply}",
-                reply_markup=self.show_keyboard(buttons)
+                reply_markup=self.show_keyboard(buttons),
+                parse_mode=ParseMode.HTML
             )
         else:
             await message.reply(
                 text=f"{reply}",
                 reply_markup=types.ReplyKeyboardRemove(),
+                parse_mode=ParseMode.HTML
             )
 
     @staticmethod
@@ -140,21 +150,15 @@ class BotTypingHandler(StatesGroup):
             print_definitions = self.prepare_sentences_for_print(definitions, choice, translation)
             await state.update_data(en_definitions=definitions)
             await state.update_data(ru_translations=translation)
-            await message.reply(
-                text=f"{print_definitions}\n\nWhat's your next move?",
-                reply_markup=self.show_keyboard(self.keyboards['next_move']),
-                parse_mode=ParseMode.HTML
-            )
+            await self.type_reply(message, f"{print_definitions}\n\nWhat's your next move?",
+                                  self.keyboards['next_move'])
         else:
             translation = word.get_word_translations(choice)
             await state.update_data(ru_translations=translation)
             await state.update_data(en_definitions=None)
             print_definitions = self.prepare_sentences_for_print(None, choice, translation)
-            await message.reply(
-                text=f"{print_definitions}\n\nWhat's your next move?",
-                reply_markup=self.show_keyboard(self.keyboards['next_move']),
-                parse_mode=ParseMode.HTML
-            )
+            await self.type_reply(message, f"{print_definitions}\n\nWhat's your next move?",
+                                  self.keyboards['next_move'])
 
     async def type_advanced_info(self, message, state, db=None):
         if not db:
@@ -166,17 +170,11 @@ class BotTypingHandler(StatesGroup):
             print_examples = self.prepare_sentences_for_print(examples, part_of_speech)
             await state.update_data(examples=examples)
             if print_examples:
-                await message.reply(
-                    text=f"{print_examples}\n\nWhat's your next move?",
-                    reply_markup=self.show_keyboard(self.keyboards['next_move']),
-                    parse_mode=ParseMode.HTML
-                )
+                await self.type_reply(message, f"{print_examples}\n\nWhat's your next move?",
+                                      self.keyboards['next_move'])
             else:
-                await message.reply(
-                    text=f"Looks like there\'s nothing here!\n\nWhat's your next move?",
-                    reply_markup=self.show_keyboard(self.keyboards['next_move']),
-                    parse_mode=ParseMode.HTML
-                )
+                await self.type_reply(message, self.bot_texts['no_examples_check'],
+                                      self.keyboards['next_move'])
         else:
             words_to_learn = await self.get_state_info(state, 'words_to_learn')
             word_id = words_to_learn[-1]
@@ -187,17 +185,10 @@ class BotTypingHandler(StatesGroup):
             examples = word_info.get_word_examples(category)
             print_examples = self.prepare_sentences_for_print(examples, category)
             if print_examples:
-                await message.reply(
-                    text=f"{print_examples}",
-                    reply_markup=self.show_keyboard(self.keyboards['show_next_word_no_advanced']),
-                    parse_mode=ParseMode.HTML
-                )
+                await self.type_reply(message, f"{print_examples}", self.keyboards['show_next_word_no_advanced'])
             else:
-                await message.reply(
-                    text=f"Looks like there\'s nothing here!",
-                    reply_markup=self.show_keyboard(self.keyboards['show_next_word_no_advanced']),
-                    parse_mode=ParseMode.HTML
-                )
+                await self.type_reply(message, self.bot_texts['no_examples_learn'],
+                                      self.keyboards['show_next_word_no_advanced'])
 
     async def add_word_to_db(self, message, state, db):
         new_word = await self.get_state_info(state, 'word')
@@ -209,35 +200,34 @@ class BotTypingHandler(StatesGroup):
                 parts_of_speech = await self.get_state_info(state, 'parts_of_speech')
                 for part in parts_of_speech:
                     if part != 'All':
-                        new_word_id = db.insert_new_word(new_word, part.title())
+                        db.insert_new_word(new_word, part.title())
             else:
-                new_word_id = db.insert_new_word(new_word, category.title())
+                db.insert_new_word(new_word, category.title())
             await self.type_reply(message, self.bot_texts['word_added'], self.keyboards['init'])
-            await state.set_state(BotTypingHandler.start_mode_choice)
+
         else:
-            await message.reply(
-                text=f"Already in your vocabulary collection!\n\nWord: {word_data[1]}\nCategory: {word_data[2]}\nStatus: {word_data[3]}\n\nLet's try again {emoji.emojize(":ghost:")}",
-                reply_markup=self.show_keyboard(self.keyboards['init'])
-            )
-            await state.set_state(BotTypingHandler.start_mode_choice)
+            await self.type_reply(message,
+                                  f"Already in your vocabulary collection!\n\nWord: {word_data[1]}\nCategory: {word_data[2]}\nStatus: {word_data[3]}\n\nLet's try again {emoji.emojize(":ghost:")}",
+                                  self.keyboards['init'])
 
+    async def print_words_to_learn(self, message, state, words_to_learn, db, flag):
+        try:
+            word_id, word, category = db.select_words_by_status('New')
+            words_to_learn.append(word_id)
+            await state.update_data(words_to_learn=words_to_learn)
 
-if __name__ == '__main__':
-    my_dict = {'Noun': ['An attempt.', 'An act of tasting or sampling.',
-                        'A score in rugby league and rugby union, analogous to a touchdown in American football.',
-                        'A screen, or sieve, for grain.', 'an effort to accomplish something; an attempt.',
-                        'an act of touching the ball down behind the opposing goal line, scoring points and entitling the scoring side to a goal kick.'],
-               'Verb': ['To attempt; to endeavour. Followed by infinitive.', 'To divide; to separate.',
-                        'To test, to work out.', 'To experiment, to strive.',
-                        'make an attempt or effort to do something.', 'subject (someone) to trial.',
-                        'make severe demands on (a person or a quality, typically patience).',
-                        'smooth (roughly planed wood) with a plane to give an accurately flat surface.']}
-    my_list = ['An attempt.', 'An act of tasting or sampling.',
-               'A score in rugby league and rugby union, analogous to a touchdown in American football.']
-    translations = {'Noun': ['попытка', 'испытание', 'проба'],
-                    'Verb': ['пытаться', 'стараться', 'пробовать', 'отведать', 'судить', 'испытывать', 'добиваться',
-                             'перепробовать', 'подвергать испытанию', 'допрашивать', 'расследовать', 'силиться',
-                             'мучить', 'проверять на опыте', 'очищать', 'отведывать', 'порываться',
-                             'ставить своей целью', 'утомлять', 'удручать', 'раздражать', 'вытапливать']}
-    test = BotTypingHandler()
-    print(test.prepare_sentences_for_print(my_dict, 'All', translations))
+            word_obj = LanguageProcessing(word)
+            definitions = word_obj.get_word_definitions(category)
+            translation = word_obj.get_word_translations(category)
+            print_definitions = self.prepare_sentences_for_print(definitions, category, translation)
+            await self.type_reply(message, f"<b>{word}</b>\n\n{print_definitions}",
+                                  self.keyboards['next_step'])
+            await state.set_state(BotTypingHandler.learn_words_choice)
+        except IndexError:
+            if flag == 0:
+                await self.type_reply(message, self.bot_texts['no_words_to_learn'],
+                                      self.keyboards['init'])
+                await state.set_state(BotTypingHandler.start_mode_choice)
+            else:
+                await self.type_reply(message, self.bot_texts['words_ended'], self.keyboards['happy_face'])
+                await state.set_state(BotTypingHandler.test_start)
