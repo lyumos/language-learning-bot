@@ -1,5 +1,7 @@
 import requests
 import json
+import os
+import aiohttp
 
 
 class FreeDictionaryAPI:
@@ -113,11 +115,26 @@ class FreeDictionaryAPI:
         except TypeError:
             return None
 
+    def get_audio_link(self):
+        response = requests.get(self.BASE_URL + self.word)
+        if response.status_code == 200:
+            text = response.text
+            json_format = json.loads(text)
+            try:
+                audio_link = json_format[0]['phonetics'][0]['audio']
+                return audio_link
+            except (KeyError, IndexError):
+                return None
+        else:
+            return None
+
 
 if __name__ == '__main__':
     word = FreeDictionaryAPI('try')
     # print(word.meanings)
-    print(word.get_relations('Noun'))
+    # print(word.get_relations('Noun'))
+    audio = word.get_audio()
+    print(audio)
     # print(word.categories)
     # print(word.get_word_definitions('Interjection'))
     # print(word.get_examples('All'))

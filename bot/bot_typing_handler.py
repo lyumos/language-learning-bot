@@ -40,7 +40,7 @@ class BotTypingHandler(StatesGroup):
                                f"{emoji.emojize(":chequered_flag:")}"],
                  'show_next_word_no_advanced': [f"{emoji.emojize(":right_arrow:")}",
                                                 f"{emoji.emojize(":chequered_flag:")}"],
-                 'happy_face': f"{emoji.emojize(":partying_face:")}"
+                 'happy_face': f"{emoji.emojize(":rocket:")}"
                  }
 
     @staticmethod
@@ -169,8 +169,9 @@ class BotTypingHandler(StatesGroup):
             examples = word_info.get_word_examples(part_of_speech)
             print_examples = self.prepare_sentences_for_print(examples, part_of_speech)
             await state.update_data(examples=examples)
+            audio_link = word_info.get_audio()
             if print_examples:
-                await self.type_reply(message, f"{print_examples}\n\nWhat's your next move?",
+                await self.type_reply(message, f"{print_examples}\n{audio_link}\n\nWhat's your next move?",
                                       self.keyboards['next_move'])
             else:
                 await self.type_reply(message, self.bot_texts['no_examples_check'],
@@ -184,8 +185,9 @@ class BotTypingHandler(StatesGroup):
             word_info = LanguageProcessing(word)
             examples = word_info.get_word_examples(category)
             print_examples = self.prepare_sentences_for_print(examples, category)
+            audio_link = word_info.get_audio()
             if print_examples:
-                await self.type_reply(message, f"{print_examples}", self.keyboards['show_next_word_no_advanced'])
+                await self.type_reply(message, f"{print_examples}\n{audio_link}", self.keyboards['show_next_word_no_advanced'])
             else:
                 await self.type_reply(message, self.bot_texts['no_examples_learn'],
                                       self.keyboards['show_next_word_no_advanced'])

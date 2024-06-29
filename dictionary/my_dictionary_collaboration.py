@@ -86,11 +86,15 @@ class LanguageProcessing:
     def get_relations(self, category_choice):
         return self.fda_version.get_relations(category_choice)
 
+    def get_audio(self):
+        return self.fda_version.get_audio_link()
+
 
 if __name__ == '__main__':
     word = LanguageProcessing('hi')
     # print(word.get_word_categories())
-    print(word.get_word_translations('Noun'))
+    # print(word.get_word_translations('Noun'))
     # print(word.get_word_definitions('All'))
     # print(word.get_word_examples('All'))
     # print(word.get_relations('All'))
+    print(word.get_audio())

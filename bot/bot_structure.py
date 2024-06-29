@@ -12,6 +12,7 @@ import emoji
 from bot.bot_typing_handler import BotTypingHandler
 from dotenv import load_dotenv
 import os
+from aiogram.types import InputFile
 
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
@@ -20,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 bot_handler = BotTypingHandler()
 router = Router()
 db = BotDB(os.getenv('DB_NAME'))
-INACTIVITY_TIMEOUT = 10
+INACTIVITY_TIMEOUT = 60
 user_timers = {}
 allowed_user_id = os.getenv('ALLOWED_USER_ID').split(', ')
 
@@ -224,7 +225,7 @@ async def go_ahead(message: Message, state: FSMContext):
 
 @router.message(
     BotTypingHandler.test_start,
-    F.text.in_([f"{emoji.emojize(":partying_face:")}"])
+    F.text.in_([f"{emoji.emojize(":rocket:")}"])
 )
 async def make_a_quiz(message: Message, state: FSMContext):
     if not await user_authorized(message):
