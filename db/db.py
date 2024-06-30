@@ -74,11 +74,23 @@ class BotDB:
         else:
             return None
 
+    def select_random_row(self, category):
+        if category == 'All':
+            word_data = self.conn.execute(
+                f"SELECT word FROM words ORDER BY RANDOM() LIMIT 1").fetchone()
+        else:
+            word_data = self.conn.execute(
+                f"SELECT word FROM words WHERE category = '{category}' ORDER BY RANDOM() LIMIT 1").fetchone()
+        return word_data[0]
+
 
 if __name__ == "__main__":
     load_dotenv()
     db_name = os.getenv('DB_NAME')
     db = BotDB(db_name)
-    print(db.select_all_by_word_id('e9caa3db-e957-4f2b-922a-38074ec654ed'))
+    category = 'noun'
+    keyboard = list(set([db.select_random_row(category) for element in range(3)]))
+    print(keyboard)
+    # print(db.select_all_by_word_id('e9caa3db-e957-4f2b-922a-38074ec654ed'))
     # print(db.select_all_by_word('trepidation', 'Noun'))
     # print(db.db_path)

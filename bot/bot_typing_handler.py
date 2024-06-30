@@ -15,6 +15,7 @@ class BotTypingHandler(StatesGroup):
     new_word_printing = State()
     new_word_handling = State()
     test_start = State()
+    check_test = State()
 
     bot_texts = {
         'welcome': f"Hi {emoji.emojize(":vulcan_salute_light_skin_tone:")}\nNeed something? Choose from: check my word, other options in progress",
@@ -40,7 +41,8 @@ class BotTypingHandler(StatesGroup):
                                f"{emoji.emojize(":chequered_flag:")}"],
                  'show_next_word_no_advanced': [f"{emoji.emojize(":right_arrow:")}",
                                                 f"{emoji.emojize(":chequered_flag:")}"],
-                 'happy_face': f"{emoji.emojize(":rocket:")}"
+                 'happy_face': f"{emoji.emojize(":rocket:")}",
+                 'next': [f"{emoji.emojize(":right_arrow:")}"]
                  }
 
     @staticmethod
@@ -137,6 +139,10 @@ class BotTypingHandler(StatesGroup):
                 elif isinstance(translations, str):
                     print_translations = '<i>' + translations.capitalize() + '</i>'
                     print_sentences.append(print_translations)
+                elif isinstance(translations, list):
+                    print_translations = '<i>' + ', '.join(translations).capitalize() + '</i>'
+                    # capitalized = print_translations[0].upper() + print_translations[1:]
+                    print_sentences.append(print_translations)
                 return "\n".join(print_sentences)
             else:
                 return ''
@@ -170,8 +176,11 @@ class BotTypingHandler(StatesGroup):
             print_examples = self.prepare_sentences_for_print(examples, part_of_speech)
             await state.update_data(examples=examples)
             audio_link = word_info.get_audio()
-            if print_examples:
+            if print_examples and audio_link:
                 await self.type_reply(message, f"{print_examples}\n{audio_link}\n\nWhat's your next move?",
+                                      self.keyboards['next_move'])
+            elif print_examples and not audio_link:
+                await self.type_reply(message, f"{print_examples}\n\nWhat's your next move?",
                                       self.keyboards['next_move'])
             else:
                 await self.type_reply(message, self.bot_texts['no_examples_check'],
@@ -186,8 +195,11 @@ class BotTypingHandler(StatesGroup):
             examples = word_info.get_word_examples(category)
             print_examples = self.prepare_sentences_for_print(examples, category)
             audio_link = word_info.get_audio()
-            if print_examples:
+            if print_examples and audio_link:
                 await self.type_reply(message, f"{print_examples}\n{audio_link}", self.keyboards['show_next_word_no_advanced'])
+            elif print_examples and not audio_link:
+                await self.type_reply(message, f"{print_examples}",
+                                      self.keyboards['show_next_word_no_advanced'])
             else:
                 await self.type_reply(message, self.bot_texts['no_examples_learn'],
                                       self.keyboards['show_next_word_no_advanced'])
