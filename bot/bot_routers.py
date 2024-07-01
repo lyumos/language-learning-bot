@@ -12,8 +12,9 @@ import emoji
 from bot.bot_typing_handler import BotTypingHandler
 from dotenv import load_dotenv
 import os
-from bot_quiz_handler import choose_word_for_quiz, show_pick_contest
+from bot_quiz_handler import choose_word_for_quiz, show_pick_contest, buffer_clear_out, increase_score, print_score
 import random
+
 load_dotenv()
 bot_token = os.getenv('BOT_TOKEN')
 bot = Bot(token=bot_token)
@@ -223,7 +224,6 @@ async def go_ahead(message: Message, state: FSMContext):
 
 @router.message(
     BotTypingHandler.test_start,
-    # F.text.in_([f"{emoji.emojize(":rocket:")}"])
 )
 async def make_a_quiz(message: Message, state: FSMContext):
     if not await user_authorized(message):
@@ -231,12 +231,12 @@ async def make_a_quiz(message: Message, state: FSMContext):
     await set_inactivity_timer(message.from_user.id, state)
     word_id = await choose_word_for_quiz(state)
     if word_id:
-        quiz_mode = ['definitions', 'translations']
-        print_definitions, keyboard = await show_pick_contest(state, word_id, db, random.choice(quiz_mode))
+        print_definitions, keyboard = await show_pick_contest(state, word_id, db)
         await bot_handler.type_reply(message, f"{print_definitions}", keyboard)
         await state.set_state(BotTypingHandler.check_test)
     else:
-        await bot_handler.type_reply(message, bot_handler.bot_texts['no_words_to_learn'], bot_handler.keyboards['init'])
+        await print_score(state, message)
+        await buffer_clear_out(state)
         await state.set_state(BotTypingHandler.start_mode_choice)
 
 
@@ -247,10 +247,14 @@ async def check_chosen_option(message: Message, state: FSMContext):
     chosen_option = message.text.lower()
     right_answer = await bot_handler.get_state_info(state, 'right_answer')
     if chosen_option == right_answer:
-        await bot_handler.type_reply(message, f"Correct! {emoji.emojize(':check_mark_button:')}", bot_handler.keyboards['next'])
+        await bot_handler.type_reply(message, f"Correct! {emoji.emojize(':check_mark_button:')}",
+                                     bot_handler.keyboards['next'])
+        await increase_score(state)
     else:
-        await bot_handler.type_reply(message, f"Oops, wrong answer! The correct word was <b>{right_answer}</b>", bot_handler.keyboards['next'])
+        await bot_handler.type_reply(message, f"Oops, wrong answer! The correct word was <b>{right_answer}</b>",
+                                     bot_handler.keyboards['next'])
     await state.set_state(BotTypingHandler.test_start)
+
 
 @router.message(
     BotTypingHandler.start_mode_choice,
@@ -259,10 +263,6 @@ async def check_chosen_option(message: Message, state: FSMContext):
 async def repeat_words(message: Message, state: FSMContext):
     if not await user_authorized(message):
         return
-    await message.answer(
-        text="Веду поиск по недавно изученным словам",
-        reply_markup=types.ReplyKeyboardRemove()
-    )
     await state.set_state(BotTypingHandler.repeat_words_choice)
 
 

@@ -226,7 +226,7 @@ class BotTypingHandler(StatesGroup):
 
     async def print_words_to_learn(self, message, state, words_to_learn, db, flag):
         try:
-            word_id, word, category = db.select_words_by_status('New')
+            word_id, word, category = db.select_words_by_status('New/Acquainted')
             words_to_learn.append(word_id)
             await state.update_data(words_to_learn=words_to_learn)
 
