@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+import random
 
 
 class BotDB:
@@ -50,8 +51,25 @@ class BotDB:
         self.conn.commit()
 
     def select_words_by_status(self, status):
-        data = self.conn.execute(f"SELECT id, word, category FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
-        self.update_word_status(data[0][0], 'Shown')
+        if status == 'New/Acquainted':
+            statuses = ['New', 'Acquainted']
+            chosen_status = random.choice(statuses)
+            data = self.conn.execute(
+                f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' LIMIt 1;").fetchall()
+            if chosen_status == 'New':
+                self.update_word_status(data[0][0], 'Acquainted')
+            else:
+                self.update_word_status(data[0][0], 'Familiar')
+        elif status == 'New':
+            data = self.conn.execute(f"SELECT id, word, category FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
+            self.update_word_status(data[0][0], 'Acquainted')
+        elif status == 'Familiar/Reviewed':
+            data = self.conn.execute(
+                f"SELECT id, word, category FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
+            if status == 'Familiar':
+                self.update_word_status(data[0][0], 'Reviewed')
+            else:
+                self.update_word_status(data[0][0], 'Memorized')
         return data[0][0], data[0][1], data[0][2]
 
     def update_word_status(self, word_id, status):

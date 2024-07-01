@@ -91,10 +91,10 @@ class LanguageProcessing:
 
 
 if __name__ == '__main__':
-    word = LanguageProcessing('hi')
+    word = LanguageProcessing('try')
     # print(word.get_word_categories())
     # print(word.get_word_translations('Noun'))
     # print(word.get_word_definitions('All'))
-    # print(word.get_word_examples('All'))
+    print(word.get_word_examples('Noun'))
     # print(word.get_relations('All'))
-    print(word.get_audio())
+    # print(word.get_audio())
