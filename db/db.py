@@ -53,9 +53,15 @@ class BotDB:
     def select_words_by_status(self, status):
         if status == 'New/Acquainted':
             statuses = ['New', 'Acquainted']
-            chosen_status = random.choice(statuses)
-            data = self.conn.execute(
-                f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' LIMIt 1;").fetchall()
+            data = None
+            count = 10
+            while not data:
+                count -= 1
+                if count < 0:
+                    raise IndexError
+                chosen_status = random.choice(statuses)
+                data = self.conn.execute(
+                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' LIMIt 1;").fetchall()
             if chosen_status == 'New':
                 self.update_word_status(data[0][0], 'Acquainted')
             else:
@@ -63,14 +69,23 @@ class BotDB:
         elif status == 'New':
             data = self.conn.execute(f"SELECT id, word, category FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
             self.update_word_status(data[0][0], 'Acquainted')
+            chosen_status = 'New'
         elif status == 'Familiar/Reviewed':
-            data = self.conn.execute(
-                f"SELECT id, word, category FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
-            if status == 'Familiar':
+            statuses = ['Familiar', 'Reviewed']
+            data = None
+            count = 10
+            while not data:
+                count -= 1
+                if count < 0:
+                    raise IndexError
+                chosen_status = random.choice(statuses)
+                data = self.conn.execute(
+                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' LIMIt 1;").fetchall()
+            if chosen_status == 'Familiar':
                 self.update_word_status(data[0][0], 'Reviewed')
             else:
                 self.update_word_status(data[0][0], 'Memorized')
-        return data[0][0], data[0][1], data[0][2]
+        return data[0][0], data[0][1], data[0][2], chosen_status
 
     def update_word_status(self, word_id, status):
         self.conn.execute(f"UPDATE words SET status = '{status}' WHERE id = '{word_id}';")
@@ -107,8 +122,10 @@ if __name__ == "__main__":
     db_name = os.getenv('DB_NAME')
     db = BotDB(db_name)
     category = 'noun'
-    keyboard = list(set([db.select_random_row(category) for element in range(3)]))
-    print(keyboard)
+    # keyboard = list(set([db.select_random_row(category) for element in range(3)]))
+    # print(keyboard)
+
+    print(db.select_words_by_status('Familiar/Reviewed'))
     # print(db.select_all_by_word_id('e9caa3db-e957-4f2b-922a-38074ec654ed'))
     # print(db.select_all_by_word('trepidation', 'Noun'))
     # print(db.db_path)

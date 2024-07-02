@@ -5,27 +5,6 @@ from dictionary.my_dictionary_collaboration import LanguageProcessing
 bot_typer = BotTypingHandler()
 
 
-async def choose_word_for_quiz(state):
-    words_to_learn = await bot_typer.get_state_info(state, 'words_to_learn')
-    try:
-        words_selection = await bot_typer.get_state_info(state, 'words_selection')
-        if words_selection == {}:
-            words_selection = {element: 0 for element in words_to_learn}
-    except KeyError:
-        words_selection = {element: 0 for element in words_to_learn}
-    max_selections = 1
-    total_score = len(words_selection) * max_selections
-    await state.update_data(total_score=total_score)
-    if all(count >= max_selections for count in words_selection.values()):
-        return None
-    min_count = min(words_selection.values())
-    available_elements = [element for element, count in words_selection.items() if count == min_count]
-    chosen_word = random.choice(available_elements)
-    words_selection[chosen_word] += 1
-    await state.update_data(words_selection=words_selection)
-    return chosen_word
-
-
 async def show_pick_contest(state, word_id, db):
     quiz_mode = ['definitions', 'translations', 'examples']
     chosen_mode = random.choice(quiz_mode)
@@ -69,15 +48,6 @@ async def show_pick_contest(state, word_id, db):
     return print_definitions, keyboard
 
 
-async def buffer_clear_out(state):
-    words_to_learn = []
-    await state.update_data(words_to_learn=words_to_learn)
-    words_selection = {}
-    await state.update_data(words_selection=words_selection)
-    learning_score = 0
-    await state.update_data(learning_score=learning_score)
-
-
 async def increase_score(state):
     try:
         score = await bot_typer.get_state_info(state, 'learning_score')
@@ -88,17 +58,65 @@ async def increase_score(state):
 
 
 async def print_score(state, message):
-    score = await bot_typer.get_state_info(state, 'learning_score')
-    total_score = await bot_typer.get_state_info(state, 'total_score')
-    if score / total_score < 0.34:
+    max_score = await bot_typer.get_state_info(state, 'total_score')
+    try:
+        current_score = await bot_typer.get_state_info(state, 'learning_score')
+        if current_score / max_score < 0.34:
+            await bot_typer.type_reply(message,
+                                       f"Don't worry, you can do better next time! Keep practicing and you'll see improvement. Your score is {current_score}/{max_score}.",
+                                       bot_typer.keyboards['init'])
+        elif current_score / max_score < 0.64:
+            await bot_typer.type_reply(message,
+                                       f"Nice effort! You're getting there. Keep it up and you'll continue to improve. Your score is {current_score}/{max_score}.",
+                                       bot_typer.keyboards['init'])
+        else:
+            await bot_typer.type_reply(message,
+                                       f"Great job! That was a fantastic round. Your score is {current_score}/{max_score}.",
+                                       bot_typer.keyboards['init'])
+    except KeyError:
         await bot_typer.type_reply(message,
-                                   f"Don't worry, you can do better next time! Keep practicing and you'll see improvement. Your score is {score}/{total_score}.",
+                                   f"Don't worry, you can do better next time! Keep practicing and you'll see improvement. Your score is 0/{max_score}.",
                                    bot_typer.keyboards['init'])
-    elif score / total_score < 0.64:
-        await bot_typer.type_reply(message,
-                                   f"Nice effort! You're getting there. Keep it up and you'll continue to improve. Your score is {score}/{total_score}.",
-                                   bot_typer.keyboards['init'])
-    else:
-        await bot_typer.type_reply(message,
-                                   f"Great job! That was a fantastic round. Your score is {score}/{total_score}.",
-                                   bot_typer.keyboards['init'])
+
+
+async def buffer_clear_out(state, mode):
+    if mode == 'learn':
+        words_key = 'words_to_learn'
+        selection_key = 'words_selection'
+    else:  # mode == 'repeat'
+        words_key = 'words_to_repeat'
+        selection_key = 'words_selection_repeat'
+
+    await state.update_data(**{words_key: []})
+    await state.update_data(**{selection_key: {}})
+    await state.update_data(learning_score=0)
+
+
+async def choose_word_for_quiz(state, mode):
+    if mode == 'learn':
+        words_key = 'words_to_learn'
+        selection_key = 'words_selection'
+    else:  # mode == 'repeat'
+        words_key = 'words_to_repeat'
+        selection_key = 'words_selection_repeat'
+    words = await bot_typer.get_state_info(state, words_key)
+    try:
+        words_selection = await bot_typer.get_state_info(state, selection_key)
+        if words_selection == {}:
+            words_selection = {element: 0 for element in words}
+    except KeyError:
+        words_selection = {element: 0 for element in words}
+
+    max_selections = 1
+    total_score = len(words_selection) * max_selections
+    await state.update_data(total_score=total_score)
+
+    if all(count >= max_selections for count in words_selection.values()):
+        return None
+
+    min_count = min(words_selection.values())
+    available_elements = [element for element, count in words_selection.items() if count == min_count]
+    chosen_word = random.choice(available_elements)
+    words_selection[chosen_word] += 1
+    await state.update_data(**{selection_key: words_selection})
+    return chosen_word
