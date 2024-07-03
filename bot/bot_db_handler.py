@@ -1,4 +1,4 @@
-from bot_typing_handler import BotTypingHandler
+from bot.bot_typing_handler import BotTypingHandler
 from db.db import DB
 import emoji
 
@@ -26,20 +26,36 @@ class BotDBHandler:
     async def add_word_to_db(self, message, state):
         new_word = await self.bot_typer.get_state_info(state, 'word')
         category = await self.bot_typer.get_state_info(state, 'pt_of_speech')
-        word_data = self.db.select_all_by_word(new_word, category.title())
-        # Если такое слово еще не добавлено в БД
-        if word_data is None:
-            if category.title() == 'All':
-                parts_of_speech = await self.bot_typer.get_state_info(state, 'parts_of_speech')
-                for part in parts_of_speech:
-                    if part != 'All':
-                        self.db.insert_new_word(new_word, part.title())
+        if category.title() == 'All':
+            count = 0
+            parts_of_speech = await self.bot_typer.get_state_info(state, 'parts_of_speech')
+            for available_category in parts_of_speech:
+                if available_category != 'All':
+                    word_data = self.db.select_all_by_word(new_word, available_category.title())
+                    if not word_data:
+                        count += 1
+                        self.db.insert_new_word(new_word, available_category.title())
+            if count == 0:
+                await self.bot_typer.type_reply(message,
+                                                f"Already in your vocabulary collection!\n\nWord: {word_data[1]}\nCategory: {word_data[2]}\nStatus: {word_data[3]}\n\nLet's try again {emoji.emojize(":ghost:")}",
+                                                self.bot_typer.keyboards['init'])
             else:
-                self.db.insert_new_word(new_word, category.title())
-            await self.bot_typer.type_reply(message, self.bot_typer.bot_texts['word_added'],
-                                            self.bot_typer.keyboards['init'])
-
+                await self.bot_typer.type_reply(message, self.bot_typer.bot_texts['word_added'],
+                                                self.bot_typer.keyboards['init'])
         else:
-            await self.bot_typer.type_reply(message,
-                                            f"Already in your vocabulary collection!\n\nWord: {word_data[1]}\nCategory: {word_data[2]}\nStatus: {word_data[3]}\n\nLet's try again {emoji.emojize(":ghost:")}",
-                                            self.bot_typer.keyboards['init'])
+            word_data = self.db.select_all_by_word(new_word, category.title())
+        # Если такое слово еще не добавлено в БД
+            if word_data is None:
+                if category.title() == 'All':
+                    parts_of_speech = await self.bot_typer.get_state_info(state, 'parts_of_speech')
+                    for part in parts_of_speech:
+                        if part != 'All':
+                            self.db.insert_new_word(new_word, part.title())
+                else:
+                    self.db.insert_new_word(new_word, category.title())
+                await self.bot_typer.type_reply(message, self.bot_typer.bot_texts['word_added'],
+                                                self.bot_typer.keyboards['init'])
+            else:
+                await self.bot_typer.type_reply(message,
+                                                f"Already in your vocabulary collection!\n\nWord: {word_data[1]}\nCategory: {word_data[2]}\nStatus: {word_data[3]}\n\nLet's try again {emoji.emojize(":ghost:")}",
+                                                self.bot_typer.keyboards['init'])
