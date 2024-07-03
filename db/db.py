@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import random
 
 
-class BotDB:
+class DB:
     logger = logging.getLogger("BotDB")
 
     def __init__(self, db_name):
@@ -120,7 +120,7 @@ class BotDB:
 if __name__ == "__main__":
     load_dotenv()
     db_name = os.getenv('DB_NAME')
-    db = BotDB(db_name)
+    db = DB(db_name)
     category = 'noun'
     # keyboard = list(set([db.select_random_row(category) for element in range(3)]))
     # print(keyboard)

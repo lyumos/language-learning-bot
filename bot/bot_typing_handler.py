@@ -1,9 +1,10 @@
 from aiogram import types
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from dictionary.my_dictionary_collaboration import LanguageProcessing
-import emoji
 from aiogram.enums import ParseMode
+import emoji
+from dictionary.my_dictionary_collaboration import LanguageProcessing
+from db.db import DB
 
 
 class BotTypingHandler(StatesGroup):
@@ -18,6 +19,9 @@ class BotTypingHandler(StatesGroup):
     check_test = State()
     repeat_start = State()
     check_test_repeat = State()
+
+    def __init__(self, bot_db: DB):
+        self.db = bot_db
 
     bot_texts = {
         'welcome': f"Hi {emoji.emojize(":vulcan_salute_light_skin_tone:")}\nNeed something? Choose from: check my word, other options in progress",
@@ -168,8 +172,8 @@ class BotTypingHandler(StatesGroup):
             await self.type_reply(message, f"{print_definitions}\n\nWhat's your next move?",
                                   self.keyboards['next_move'])
 
-    async def type_extra_info(self, message, state, db=None):
-        if not db:
+    async def type_extra_info(self, message, state, mode):
+        if mode == 'check':
             part_of_speech = await self.get_state_info(state, 'pt_of_speech')
             word = await self.get_state_info(state, 'word')
 
@@ -188,9 +192,12 @@ class BotTypingHandler(StatesGroup):
                 await self.type_reply(message, self.bot_texts['no_examples_check'],
                                       self.keyboards['next_move'])
         else:
-            words_to_learn = await self.get_state_info(state, 'words_to_learn')
-            word_id = words_to_learn[-1]
-            word_db_info = db.select_all_by_word_id(word_id)
+            if mode == 'learn':
+                words = await self.get_state_info(state, 'words_to_learn')
+            elif mode == 'repeat':
+                words = await self.get_state_info(state, 'words_to_repeat')
+            word_id = words[-1]
+            word_db_info = self.db.select_all_by_word_id(word_id)
             word = word_db_info[1]
             category = word_db_info[2]
             word_info = LanguageProcessing(word)
@@ -206,88 +213,3 @@ class BotTypingHandler(StatesGroup):
             else:
                 await self.type_reply(message, self.bot_texts['no_examples_learn'],
                                       self.keyboards['show_next_word_no_advanced'])
-
-    async def add_word_to_db(self, message, state, db):
-        new_word = await self.get_state_info(state, 'word')
-        category = await self.get_state_info(state, 'pt_of_speech')
-        word_data = db.select_all_by_word(new_word, category.title())
-        # Если такое слово еще не добавлено в БД
-        if word_data is None:
-            if category.title() == 'All':
-                parts_of_speech = await self.get_state_info(state, 'parts_of_speech')
-                for part in parts_of_speech:
-                    if part != 'All':
-                        db.insert_new_word(new_word, part.title())
-            else:
-                db.insert_new_word(new_word, category.title())
-            await self.type_reply(message, self.bot_texts['word_added'], self.keyboards['init'])
-
-        else:
-            await self.type_reply(message,
-                                  f"Already in your vocabulary collection!\n\nWord: {word_data[1]}\nCategory: {word_data[2]}\nStatus: {word_data[3]}\n\nLet's try again {emoji.emojize(":ghost:")}",
-                                  self.keyboards['init'])
-
-    async def print_quiz_words(self, mode, message, state, words_list, db, flag):
-        try:
-            if mode == 'learn':
-                word_status = 'New/Acquainted'
-                next_state = BotTypingHandler.learn_words_choice
-            else:  # mode == 'repeat'
-                word_status = 'Familiar/Reviewed'
-                next_state = BotTypingHandler.repeat_words_choice
-            word_id, word, category, chosen_status = db.select_words_by_status(word_status)
-            db.update_word_status(word_id, 'Shown')
-            if len(words_list) == 0:
-                old_statuses = {}
-                await state.update_data(old_statuses=old_statuses)
-            old_statuses = await self.get_state_info(state, 'old_statuses')
-            old_statuses[f'{word_id}'] = chosen_status
-            await state.update_data(old_statuses=old_statuses)
-            words_list.append(word_id)
-            await state.update_data(**{f'words_to_{mode}': words_list})
-
-            word_obj = LanguageProcessing(word)
-            definitions = word_obj.get_word_definitions(category)
-            translation = word_obj.get_word_translations(category)
-            print_definitions = self.prepare_sentences_for_print(definitions, category, translation)
-            await self.type_reply(message, f"<b>{word}</b>\n\n{print_definitions}",
-                                  self.keyboards['next_step'])
-            await state.set_state(next_state)
-        except IndexError:
-            if flag == 0:
-                await self.type_reply(message, self.bot_texts['no_words_to_learn'],
-                                      self.keyboards['init'])
-                await state.set_state(BotTypingHandler.start_mode_choice)
-            else:
-                await self.revert_statuses(state, db)
-                # old_statuses = await self.get_state_info(state, 'old_statuses')
-                # for word_id, status in old_statuses.items():
-                #     if status == 'New':
-                #         db.update_word_status(word_id, 'Acquainted')
-                #     elif status == 'Acquainted':
-                #         db.update_word_status(word_id, 'Familiar')
-                #     elif status == 'Familiar':
-                #         db.update_word_status(word_id, 'Reviewed')
-                #     elif status == 'Reviewed':
-                #         db.update_word_status(word_id, 'Memorized')
-                # old_statuses = {}
-                # await state.update_data(old_statuses=old_statuses)
-                await self.type_reply(message, self.bot_texts['quiz_time'], self.keyboards['happy_face'])
-                if mode == 'learn':
-                    await state.set_state(BotTypingHandler.test_start)
-                else:
-                    await state.set_state(BotTypingHandler.repeat_start)
-
-    async def revert_statuses(self, state, db):
-        old_statuses = await self.get_state_info(state, 'old_statuses')
-        for word_id, status in old_statuses.items():
-            if status == 'New':
-                db.update_word_status(word_id, 'Acquainted')
-            elif status == 'Acquainted':
-                db.update_word_status(word_id, 'Familiar')
-            elif status == 'Familiar':
-                db.update_word_status(word_id, 'Reviewed')
-            elif status == 'Reviewed':
-                db.update_word_status(word_id, 'Memorized')
-        old_statuses = {}
-        await state.update_data(old_statuses=old_statuses)
