@@ -67,11 +67,14 @@ class GoogleTranslateExtendedAPI:
                 else:
                     return self.meaning['translation']
         else:
-            agro_translated = argostranslate.translate.translate(self.word, "en", "ru")
-            if agro_translated.lower() != self.meaning['translation']:
-                return self.meaning['translation'] + ', ' + agro_translated.lower()  # str
-            else:
-                return self.meaning['translation']
+            try:
+                agro_translated = argostranslate.translate.translate(self.word, "en", "ru")
+                if agro_translated.lower() != self.meaning['translation']:
+                    return self.meaning['translation'] + ', ' + agro_translated.lower()  # str
+                else:
+                    return self.meaning['translation']
+            except AttributeError:
+                return None
 
     def get_word_definitions(self, category_choice):
         if category_choice in self.definition_categories or category_choice == 'All':

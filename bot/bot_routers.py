@@ -26,7 +26,7 @@ class BotRouterHandler:
         self.router = Router()
         self.user_timers = {}
 
-        self.db = DB(os.getenv('DB_NAME'))
+        self.db = DB()
         self.typing_handler = BotTypingHandler(self.db)
         self.db_handler = BotDBHandler(self.typing_handler, self.db)
         self.quiz_handler = BotQuizHandler(self.typing_handler, self.db_handler, self.db)

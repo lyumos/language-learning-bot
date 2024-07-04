@@ -1,6 +1,6 @@
 import random
-from bot_typing_handler import BotTypingHandler
-from bot_db_handler import BotDBHandler
+from bot.bot_typing_handler import BotTypingHandler
+from bot.bot_db_handler import BotDBHandler
 from db.db import DB
 from dictionary.my_dictionary_collaboration import LanguageProcessing
 
