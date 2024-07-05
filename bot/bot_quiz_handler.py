@@ -26,7 +26,7 @@ class BotQuizHandler:
         except KeyError:
             words_selection = {element: 0 for element in words}
 
-        max_selections = 1
+        max_selections = 3
         total_score = len(words_selection) * max_selections
         await state.update_data(total_score=total_score)
 

@@ -12,63 +12,42 @@ class DB:
     logger = logging.getLogger("BotDB")
 
     def __init__(self):
-        # self.db_name = db_name
-        self.db_dir = os.getenv('DB_PATH')
-        self.dbname = 'db_for_bot.db'
-        self.db_path = self.db_dir + self.dbname
-        # print(self.db_path)
-        # script_dir = os.path.dirname(os.path.abspath(__file__))
-        # db_dir = os.path.abspath(os.path.join(script_dir, '../db'))
-        # db_dir = os.path.dirname(os.path.abspath(__file__))
-        # self.db_path = self.get_db_path()
-        # self.script_path = self.get_script_path()
-        # self.logger.debug(f"Database path set to: {self.db_path}")
-        # self.logger.debug(f"SQL script path set to: {self.script_path}")
-        # if not os.path.exists(self.db_path):
-        #     self.create_db()
-        os.chdir(self.db_dir)
+        load_dotenv()
+
+        self.db_dir = os.getenv('DB_DIR', './')
+        self.dbname = os.getenv('DB_NAME', 'db.db')
+        self.db_path = os.path.join(self.db_dir, self.dbname)
+
+        if not os.path.exists(self.db_path):
+            self.logger.info("Database does not exist. Creating a new one.")
+            self.create_database()
+
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
 
-    # def get_script_path(self):
-    #     if getattr(sys, 'frozen', False):  # Check if the application is frozen
-    #         # If running as a compiled executable, use the _MEIPASS path
-    #         script_path = os.path.join(sys._MEIPASS, 'db', 'db_creation.sql')
-    #     else:
-    #         # If running as a script, use the relative path
-    #         script_dir = os.path.dirname(os.path.abspath(__file__))
-    #         script_path = os.path.join(script_dir, 'db_creation.sql')
-    #     return script_path
-    #
-    #
-    # def get_db_path(self):
-    #     if getattr(sys, 'frozen', False):  # Check if the application is frozen
-    #         # If running as a compiled executable, use the _MEIPASS path
-    #         db_path = os.path.join(sys._MEIPASS, 'db', self.db_name)
-    #     else:
-    #         # If running as a script, use the relative path
-    #         db_dir = os.path.dirname(os.path.abspath(__file__))
-    #         db_path = os.path.join(db_dir, self.db_name)
-    #     return db_path
-    #
-    # def create_db(self):
-    #     if not os.path.exists(self.script_path):
-    #         raise FileNotFoundError(f"SQL script file '{self.script_path}' does not exist.")
-    #     self.logger.info(f"Creating database at {self.db_path} using script {self.script_path}")
-    #     with open(self.script_path, 'r', encoding='utf-8') as file:
-    #         sql_script = file.read()
-    #     self.conn = sqlite3.connect(self.db_name)
-    #     self.cursor = self.conn.cursor()
-    #     self.cursor.executescript(sql_script)
-    #     self.conn.commit()
-    #     self.conn.close()
+    def create_database(self):
+        os.makedirs(self.db_dir, exist_ok=True)
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        sql_script = """
+        CREATE TABLE "words" (
+            "id"    TEXT NOT NULL UNIQUE,
+            "word"  TEXT NOT NULL,
+            "category" TEXT NOT NULL,
+            "status"    TEXT NOT NULL,
+            PRIMARY KEY("id")
+        );
+        """
+        cursor.executescript(sql_script)
+        conn.commit()
+        conn.close()
+        self.logger.info("Database created successfully.")
 
     def insert_new_word(self, word, category):
         word_uuid = uuid.uuid4()
         self.conn.execute(f'INSERT INTO words (id, word, category, status)'
                           f'VALUES ("{word_uuid}","{word}", "{category}", "New");')
         self.conn.commit()
-        # return word_uuid
 
     def insert_new_test(self, word_id, status):
         test_uuid = uuid.uuid4()
@@ -94,7 +73,8 @@ class DB:
             else:
                 self.update_word_status(data[0][0], 'Familiar')
         elif status == 'New':
-            data = self.conn.execute(f"SELECT id, word, category FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
+            data = self.conn.execute(
+                f"SELECT id, word, category FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
             self.update_word_status(data[0][0], 'Acquainted')
             chosen_status = 'New'
         elif status == 'Familiar/Reviewed':
