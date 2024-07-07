@@ -12,7 +12,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     handlers=[
         logging.FileHandler("logs/bot.log", mode='a', encoding='utf-8'),  # Логи пишутся в файл
-        logging.StreamHandler()  # Логи выводятся в консоль
+        # logging.StreamHandler()  # Логи выводятся в консоль
     ]
 )
 
