@@ -27,6 +27,7 @@
 
 `git clone https://github.com/lyumos/language-learning-bot.git`<br>
 `cd language-learning-bot`
+
 2. Установить зависимости
 
 `pip install -r requirements.txt`
