@@ -1,10 +1,14 @@
 import subprocess
 import json
 import argostranslate.translate
+from dotenv import load_dotenv
+import os
 
 
 class GoogleTranslateExtendedAPI:
-    script_file = '../dictionary/google-translate-extended-api.js'
+    load_dotenv()
+    project_dir = os.getenv('PROJ_DIR_PATH', './')
+    script_file = project_dir + '/google-translate-extended-api.js'
 
     def __init__(self, word):
         self.word = word

@@ -14,6 +14,9 @@
 
 **Требования**
 * Python 3.12+
+* Node.js:
+  * node v18.19.1 
+  * npm v10.2.4
 * Библиотеки:
   * aiogram
   * aiohttp
@@ -31,6 +34,10 @@
 2. Установить зависимости
 
 `pip install -r requirements.txt`
+
+3. Установить модуль google-translate-extended-api
+
+`npm install google-translate-extended-api`
 
 **Настройка**
 <br>Создать файл .env в корне проекта и добавить в него необходимые данные, опираясь на .env.example
