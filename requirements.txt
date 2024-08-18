@@ -56,3 +56,4 @@ tqdm==4.66.4
 typing_extensions==4.12.2
 urllib3==2.2.2
 yarl==1.9.4
+mtranslate~=1.8

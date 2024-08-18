@@ -35,6 +35,7 @@ class BotRouterHandler:
 
     def _setup_routes(self):
         self.router.message(Command("start"))(self.choose_initial_mode)
+        # self.router.message(Command("settings"))(self.get_settings)
         self.router.message(
             BotTypingHandler.start_mode_choice,
             F.text.in_([self.typing_handler.bot_texts['word_check']])
@@ -118,6 +119,13 @@ class BotRouterHandler:
                                               self.typing_handler.keyboards['init'])
         await state.set_state(BotTypingHandler.start_mode_choice)
         await self.set_inactivity_timer(message.from_user.id, state)
+
+    # async def get_settings(self, message: Message, state: FSMContext):
+    #     if not await self.user_authorized(message):
+    #         return
+    #     await self.set_inactivity_timer(message.from_user.id, state)
+    #     await self.typing_handler.type_answer(message, '',
+    #                                           self.typing_handler.keyboards['init'])
 
     async def request_word(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):

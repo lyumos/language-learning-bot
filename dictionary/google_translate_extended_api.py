@@ -1,6 +1,6 @@
 import subprocess
 import json
-import argostranslate.translate
+import mtranslate
 from dotenv import load_dotenv
 import os
 
@@ -65,20 +65,13 @@ class GoogleTranslateExtendedAPI:
                             return self.meaning['translation']
                     return translations  #dict
             else:
-                agro_translated = argostranslate.translate.translate(self.word, "en", "ru")
-                if agro_translated.lower() != self.meaning['translation']:
-                    return self.meaning['translation'] + ', ' + agro_translated.lower()  # str
+                translated = mtranslate.translate(self.word, "ru", "en")
+                if translated != self.meaning['translation']:
+                    return self.meaning['translation'] + ', ' + translated.lower()  # str
                 else:
                     return self.meaning['translation']
         else:
-            try:
-                agro_translated = argostranslate.translate.translate(self.word, "en", "ru")
-                if agro_translated.lower() != self.meaning['translation']:
-                    return self.meaning['translation'] + ', ' + agro_translated.lower()  # str
-                else:
-                    return self.meaning['translation']
-            except AttributeError:
-                return None
+            return self.meaning['translation']
 
     def get_word_definitions(self, category_choice):
         if category_choice in self.definition_categories or category_choice == 'All':
@@ -103,7 +96,8 @@ class GoogleTranslateExtendedAPI:
 
 
 if __name__ == '__main__':
-    word = GoogleTranslateExtendedAPI('lemon')
+    word = GoogleTranslateExtendedAPI('undivided attention')
+
     # print(word.meaning)
-    print(word.get_word_definitions('All'))
-    # print(word.get_translations('All'))
+    # print(word.get_word_definitions('All'))
+    print(word.get_translations('All'))
