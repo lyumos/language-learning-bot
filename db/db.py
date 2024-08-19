@@ -123,6 +123,12 @@ class DB:
                 f"SELECT word FROM words WHERE category = '{category}' ORDER BY RANDOM() LIMIT 1").fetchone()
         return word_data[0]
 
+    def select_count_by_category(self, category):
+        count = self.conn.execute(
+            f"SELECT COUNT(id) FROM words WHERE category = '{category}';").fetchone()
+        return count[0]
+
+
 
 if __name__ == "__main__":
     load_dotenv()
@@ -132,7 +138,8 @@ if __name__ == "__main__":
     # keyboard = list(set([db.select_random_row(category) for element in range(3)]))
     # print(keyboard)
 
-    print(db.select_words_by_status('Familiar/Reviewed'))
-    # print(db.select_all_by_word_id('e9caa3db-e957-4f2b-922a-38074ec654ed'))
+    # print(db.select_words_by_status('Familiar/Reviewed'))
+    # print(db.select_all_by_word_id('0c4a349b-439e-4f9f-90b6-1ddfadab9f99'))
+    print(db.select_count_by_category('Adjective'))
     # print(db.select_all_by_word('trepidation', 'Noun'))
     # print(db.db_path)

@@ -145,8 +145,8 @@ class BotRouterHandler:
 
         if word_info.check_definitions() is None:
             if new_word.count(' ') != 0: #если это выражение из нескольких слов
-                await state.update_data(pt_of_speech='All')
-                await self.typing_handler.type_word_info(message, state, 'All', None)
+                await state.update_data(pt_of_speech='Expression')
+                await self.typing_handler.type_word_info(message, state, 'Expression', None)
                 await state.set_state(BotTypingHandler.new_word_handling)
             else: #если такого слова не существует
                 await self.typing_handler.type_reply(message, self.typing_handler.bot_texts['wrong_word'])

@@ -80,51 +80,63 @@ class BotQuizHandler:
                 else:
                     await state.set_state(BotTypingHandler.repeat_start)
 
+    import random
+
     async def get_exercise(self, state, word_id):
-        exercise_mode = ['definitions', 'translations', 'examples']
-        input_mode = ['buttons', 'typing']
-        chosen_exercise = random.choice(exercise_mode)
-        chosen_input = random.choice(input_mode)
         word_db_info = self.db.select_all_by_word_id(word_id)
         word = word_db_info[1]
         category = word_db_info[2]
         word_info = LanguageProcessing(word)
+
+        definitions = word_info.get_word_definitions(category)
+        translations = word_info.get_word_translations(category)
+        examples = word_info.get_word_examples(category)
+
+        exercise_mode = []
+        if definitions:
+            exercise_mode.append('definitions')
+        if translations:
+            exercise_mode.append('translations')
+        if examples:
+            exercise_mode.append('examples')
+
+        chosen_exercise = random.choice(exercise_mode)
+
+        input_mode = ['buttons', 'typing']
+        chosen_input = random.choice(input_mode)
+
         if chosen_exercise == 'definitions':
-            definitions = word_info.get_word_definitions(category)
             print_definitions = self.bot_typer.prepare_sentences_for_print(definitions, category)
         elif chosen_exercise == 'translations':
-            translations = word_info.get_word_translations(category)
-            if translations:
-                print_definitions = self.bot_typer.prepare_sentences_for_print(None, category, translations)
-            else:
-                definitions = word_info.get_word_definitions(category)
-                print_definitions = self.bot_typer.prepare_sentences_for_print(definitions, category)
+            print_definitions = self.bot_typer.prepare_sentences_for_print(None, category, translations)
         elif chosen_exercise == 'examples':
-            examples = word_info.get_word_examples(category)
-            if examples:
-                replaced_examples = [sentence.replace(word, '______') for sentence in examples]
-                print_definitions = self.bot_typer.prepare_sentences_for_print(replaced_examples, category)
-            else:
-                definitions = word_info.get_word_definitions(category)
-                print_definitions = self.bot_typer.prepare_sentences_for_print(definitions, category)
+            replaced_examples = [sentence.replace(word, '______') for sentence in examples]
+            print_definitions = self.bot_typer.prepare_sentences_for_print(replaced_examples, category)
+
         if chosen_input == 'buttons':
             keyboard = [word]
-            while len(keyboard) < 4:
-                try:
-                    keyboard.append(self.db.select_random_row(category))
-                    keyboard = list(set(keyboard))
-                    if len(keyboard) == 1:
-                        while len(keyboard) < 4:
-                            keyboard.append(self.db.select_random_row('All'))
-                            keyboard = list(set(keyboard))
-                        break
-                except TypeError:
-                    keyboard.append(self.db.select_random_row(category))
-                    keyboard = list(set(keyboard))
-            random.shuffle(keyboard)
+            count = self.db.select_count_by_category(category)
+            if count < 4:
+                keyboard = None
+            else:
+                while len(keyboard) < 4:
+                    try:
+                        keyboard.append(self.db.select_random_row(category))
+                        keyboard = list(set(keyboard))
+                        if len(keyboard) == 1:
+                            while len(keyboard) < 4:
+                                keyboard.append(self.db.select_random_row('All'))
+                                keyboard = list(set(keyboard))
+                            break
+                    except TypeError:
+                        keyboard.append(self.db.select_random_row(category))
+                        keyboard = list(set(keyboard))
+                random.shuffle(keyboard)
         else:
             keyboard = None
+
         await state.update_data(right_answer=word)
+
         return print_definitions, keyboard
 
     async def increase_score(self, state):

@@ -31,28 +31,31 @@ class LanguageProcessing:
                 return categories
 
     def get_word_definitions(self, category_choice):
-        fda_definitions = self.fda_version.get_word_definitions(category_choice.title())
-        gtea_definitions = self.gtea_version.get_word_definitions(category_choice.title())
-        if category_choice.title() != 'All':
-            if fda_definitions and gtea_definitions:
-                return gtea_definitions + fda_definitions  #list
-            elif fda_definitions and not gtea_definitions:
-                return fda_definitions  #list
-            elif gtea_definitions and not fda_definitions:
-                return gtea_definitions  #list
+        if category_choice.title() != 'Expression':
+            fda_definitions = self.fda_version.get_word_definitions(category_choice.title())
+            gtea_definitions = self.gtea_version.get_word_definitions(category_choice.title())
+            if category_choice.title() != 'All':
+                if fda_definitions and gtea_definitions:
+                    return gtea_definitions + fda_definitions  #list
+                elif fda_definitions and not gtea_definitions:
+                    return fda_definitions  #list
+                elif gtea_definitions and not fda_definitions:
+                    return gtea_definitions  #list
+            else:
+                if fda_definitions and gtea_definitions:
+                    word_definitions = fda_definitions.copy()
+                    for key, value in gtea_definitions.items():
+                        if key in word_definitions:
+                            word_definitions[key].extend(value)
+                        else:
+                            word_definitions[key] = value
+                    return word_definitions  #dict
+                elif fda_definitions and not gtea_definitions:
+                    return fda_definitions  #dict
+                elif gtea_definitions and not fda_definitions:
+                    return gtea_definitions  #dict
         else:
-            if fda_definitions and gtea_definitions:
-                word_definitions = fda_definitions.copy()
-                for key, value in gtea_definitions.items():
-                    if key in word_definitions:
-                        word_definitions[key].extend(value)
-                    else:
-                        word_definitions[key] = value
-                return word_definitions  #dict
-            elif fda_definitions and not gtea_definitions:
-                return fda_definitions  #dict
-            elif gtea_definitions and not fda_definitions:
-                return gtea_definitions  #dict
+            return None
 
     def get_word_translations(self, category_choice):
         translation = self.gtea_version.get_translations(category_choice.title())
