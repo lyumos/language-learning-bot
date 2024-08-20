@@ -35,7 +35,7 @@ class BotRouterHandler:
 
     def _setup_routes(self):
         self.router.message(Command("start"))(self.choose_initial_mode)
-        # self.router.message(Command("settings"))(self.get_settings)
+        self.router.message(Command("settings"))(self.get_settings)
         self.router.message(
             BotTypingHandler.start_mode_choice,
             F.text.in_([self.typing_handler.bot_texts['word_check']])
@@ -112,6 +112,14 @@ class BotRouterHandler:
             self.user_timers[user_id].cancel()
         self.user_timers[user_id] = asyncio.create_task(handle_inactivity())
 
+    async def get_settings(self, message: Message, state: FSMContext):
+        if not await self.user_authorized(message):
+            return
+        await self.set_inactivity_timer(message.from_user.id, state)
+        await self.typing_handler.type_answer(message, self.typing_handler.bot_texts['settings'],
+                                              self.typing_handler.keyboards['settings'])
+        await state.set_state(BotTypingHandler.settings_choice)
+
     async def choose_initial_mode(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):
             return
@@ -119,13 +127,6 @@ class BotRouterHandler:
                                               self.typing_handler.keyboards['init'])
         await state.set_state(BotTypingHandler.start_mode_choice)
         await self.set_inactivity_timer(message.from_user.id, state)
-
-    # async def get_settings(self, message: Message, state: FSMContext):
-    #     if not await self.user_authorized(message):
-    #         return
-    #     await self.set_inactivity_timer(message.from_user.id, state)
-    #     await self.typing_handler.type_answer(message, '',
-    #                                           self.typing_handler.keyboards['init'])
 
     async def request_word(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):

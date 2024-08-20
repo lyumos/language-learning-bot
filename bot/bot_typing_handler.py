@@ -19,12 +19,13 @@ class BotTypingHandler(StatesGroup):
     check_test = State()
     repeat_start = State()
     check_test_repeat = State()
+    settings_choice = State()
 
     def __init__(self, bot_db: DB):
         self.db = bot_db
 
     bot_texts = {
-        'welcome': f"Hi {emoji.emojize(":vulcan_salute_light_skin_tone:")}\nNeed something? Choose from: check my word, other options in progress",
+        'welcome': f"Hi {emoji.emojize(":vulcan_salute_light_skin_tone:")}\nYou can choose to: check a word, learn words you've added, or review words you've already learned",
         'word_check': f"Check my word {emoji.emojize(":magnifying_glass_tilted_left:")}",
         'writing_hand': f"{emoji.emojize(":writing_hand_light_skin_tone:")}",
         'wrong_word': f"Whoops, that's not a real word!\n\nLet's try again {emoji.emojize(":ghost:")}",
@@ -35,7 +36,8 @@ class BotTypingHandler(StatesGroup):
         'square_one': "Back to square one, eh? Let's start fresh!",
         'no_words_to_learn': f"Looks like there are no words to study right now!\n\nAdd new words to your vocabulary collection to study later {emoji.emojize(":books:")}",
         'words_ended': f"Those were all the new words! Add more to study later. Let's take the quiz {emoji.emojize(":rocket:")}",
-        'quiz_time': f"That's all for now! Let's take a quiz {emoji.emojize(":rocket:")}"
+        'quiz_time': f"That's all for now! Let's take a quiz {emoji.emojize(":rocket:")}",
+        'settings': f"Settings are up! What would you like to modify?"
     }
 
     keyboards = {'init': [f"Check my word {emoji.emojize(":magnifying_glass_tilted_left:")}",
@@ -48,7 +50,8 @@ class BotTypingHandler(StatesGroup):
                  'show_next_word_no_advanced': [f"{emoji.emojize(":right_arrow:")}",
                                                 f"{emoji.emojize(":chequered_flag:")}"],
                  'happy_face': f"{emoji.emojize(":rocket:")}",
-                 'next': [f"{emoji.emojize(":right_arrow:")}"]
+                 'next': [f"{emoji.emojize(":right_arrow:")}"],
+                 'settings': ['Notifications', 'Word of the day', 'Quiz']
                  }
 
     @staticmethod
