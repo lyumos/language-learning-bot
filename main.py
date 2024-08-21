@@ -19,7 +19,6 @@ logging.basicConfig(
 
 async def main():
     bot_handler = BotRouterHandler()
-
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(bot_handler.router)
     await dp.start_polling(bot_handler.bot)

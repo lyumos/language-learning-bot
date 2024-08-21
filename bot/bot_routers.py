@@ -2,6 +2,7 @@ import asyncio
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from datetime import datetime, timedelta
 from aiogram.types import Message
 from dotenv import load_dotenv
 import emoji
@@ -32,6 +33,8 @@ class BotRouterHandler:
         self.quiz_handler = BotQuizHandler(self.typing_handler, self.db_handler, self.db)
 
         self._setup_routes()
+
+        asyncio.create_task(self.send_daily_message())
 
     def _setup_routes(self):
         self.router.message(Command("start"))(self.choose_initial_mode)
@@ -112,6 +115,22 @@ class BotRouterHandler:
             self.user_timers[user_id].cancel()
         self.user_timers[user_id] = asyncio.create_task(handle_inactivity())
 
+    async def send_daily_message(self):
+        user_ids = self.allowed_user_id
+        while True:
+            for user_id in user_ids:
+                now = datetime.now()
+                target_time = now.replace(hour=20, minute=00, second=0, microsecond=0)
+
+                if now > target_time:
+                    target_time += timedelta(days=1)
+
+                wait_time = (target_time - now).total_seconds()
+
+                await asyncio.sleep(wait_time)
+                await self.bot.send_message(user_id, "Это ваше ежедневное сообщение!")
+                await asyncio.sleep(24 * 60 * 60)
+
     async def get_settings(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):
             return
@@ -145,11 +164,11 @@ class BotRouterHandler:
         word_info = LanguageProcessing(new_word)
 
         if word_info.check_definitions() is None:
-            if new_word.count(' ') != 0: #если это выражение из нескольких слов
+            if new_word.count(' ') != 0:  #если это выражение из нескольких слов
                 await state.update_data(pt_of_speech='Expression')
                 await self.typing_handler.type_word_info(message, state, 'Expression', None)
                 await state.set_state(BotTypingHandler.new_word_handling)
-            else: #если такого слова не существует
+            else:  #если такого слова не существует
                 await self.typing_handler.type_reply(message, self.typing_handler.bot_texts['wrong_word'])
                 await state.set_state(BotTypingHandler.check_word_choice)
         else:
