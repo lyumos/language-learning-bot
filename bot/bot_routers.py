@@ -300,7 +300,7 @@ class BotRouterHandler:
         await self.set_inactivity_timer(message.from_user.id, state)
         word_id = await self.quiz_handler.choose_word_for_quiz(state, mode)
         if word_id:
-            print_definitions, keyboard = await self.quiz_handler.get_exercise(state, word_id)
+            print_definitions, keyboard = await self.quiz_handler.get_exercise(message, state, word_id)
             await self.typing_handler.type_reply(message, f"{print_definitions}", keyboard)
             await state.set_state(next_state)
         else:

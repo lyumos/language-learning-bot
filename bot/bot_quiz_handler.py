@@ -48,7 +48,8 @@ class BotQuizHandler:
             else:  # mode == 'repeat'
                 word_status = 'Familiar/Reviewed'
                 next_state = BotTypingHandler.repeat_words_choice
-            word_id, word, category, chosen_status = self.db.select_words_by_status(word_status)
+            word_id, word, category, chosen_status = self.db.select_words_by_status(word_status,
+                                                                                    user_id=str(message.from_user.id))
             self.db.update_word_status(word_id, 'Shown')
             if len(words_list) == 0:
                 old_statuses = {}
@@ -80,9 +81,7 @@ class BotQuizHandler:
                 else:
                     await state.set_state(BotTypingHandler.repeat_start)
 
-    import random
-
-    async def get_exercise(self, state, word_id):
+    async def get_exercise(self, message, state, word_id):
         word_db_info = self.db.select_all_by_word_id(word_id)
         word = word_db_info[1]
         category = word_db_info[2]
@@ -115,21 +114,21 @@ class BotQuizHandler:
 
         if chosen_input == 'buttons':
             keyboard = [word]
-            count = self.db.select_count_by_category(category)
+            count = self.db.select_count_by_category(category, user_id=str(message.from_user.id))
             if count < 4:
                 keyboard = None
             else:
                 while len(keyboard) < 4:
                     try:
-                        keyboard.append(self.db.select_random_row(category))
+                        keyboard.append(self.db.select_random_row(category, user_id=str(message.from_user.id)))
                         keyboard = list(set(keyboard))
                         if len(keyboard) == 1:
                             while len(keyboard) < 4:
-                                keyboard.append(self.db.select_random_row('All'))
+                                keyboard.append(self.db.select_random_row('All', user_id=str(message.from_user.id)))
                                 keyboard = list(set(keyboard))
                             break
                     except TypeError:
-                        keyboard.append(self.db.select_random_row(category))
+                        keyboard.append(self.db.select_random_row(category, user_id=str(message.from_user.id)))
                         keyboard = list(set(keyboard))
                 random.shuffle(keyboard)
         else:

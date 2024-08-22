@@ -31,11 +31,19 @@ class DB:
         cursor = conn.cursor()
         sql_script = """
         CREATE TABLE "words" (
-            "id"    TEXT NOT NULL UNIQUE,
-            "word"  TEXT NOT NULL,
+            "id"	TEXT NOT NULL UNIQUE,
+            "word"	TEXT NOT NULL,
             "category" TEXT NOT NULL,
-            "status"    TEXT NOT NULL,
+            "status"	TEXT NOT NULL,
+            "modified_date" TEXT NOT NULL,
+            "user_id" TEXT NOT NULL,
             PRIMARY KEY("id")
+        );
+        CREATE TABLE "settings" (
+            "user_id" TEXT NOT NULL UNIQUE,
+            "daily_message_enabled" TEXT NOT NULL,
+            "review_message_enabled" TEXT NOT NULL,
+            PRIMARY KEY("user_id")
         );
         """
         cursor.executescript(sql_script)
@@ -43,20 +51,14 @@ class DB:
         conn.close()
         self.logger.info("Database created successfully.")
 
-    def insert_new_word(self, word, category):
+    def insert_new_word(self, word, category, user_id):
         word_uuid = uuid.uuid4()
-        self.conn.execute(f'INSERT INTO words (id, word, category, status)'
-                          f'VALUES ("{word_uuid}","{word}", "{category}", "New");')
-        self.conn.commit()
-
-    def insert_new_test(self, word_id, status):
-        test_uuid = uuid.uuid4()
         current_datetime = datetime.now()
-        self.conn.execute(f'INSERT INTO tests (id, word_id, test_number, test_date)'
-                          f'VALUES ("{test_uuid}","{word_id}", "{status}", "{current_datetime}");')
+        self.conn.execute(f'INSERT INTO words (id, word, category, status, modified_date, user_id)'
+                          f'VALUES ("{word_uuid}","{word}", "{category}", "New", "{current_datetime}", "{user_id}");')
         self.conn.commit()
 
-    def select_words_by_status(self, status):
+    def select_words_by_status(self, status, user_id):
         if status == 'New/Acquainted':
             statuses = ['New', 'Acquainted']
             data = None
@@ -67,14 +69,14 @@ class DB:
                     raise IndexError
                 chosen_status = random.choice(statuses)
                 data = self.conn.execute(
-                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' LIMIt 1;").fetchall()
+                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' AND user_id = '{user_id}' LIMIt 1;").fetchall()
             if chosen_status == 'New':
                 self.update_word_status(data[0][0], 'Acquainted')
             else:
                 self.update_word_status(data[0][0], 'Familiar')
         elif status == 'New':
             data = self.conn.execute(
-                f"SELECT id, word, category FROM words WHERE status = '{status}' LIMIt 1;").fetchall()
+                f"SELECT id, word, category FROM words WHERE status = '{status}' AND user_id = '{user_id}' LIMIt 1;").fetchall()
             self.update_word_status(data[0][0], 'Acquainted')
             chosen_status = 'New'
         elif status == 'Familiar/Reviewed':
@@ -87,7 +89,7 @@ class DB:
                     raise IndexError
                 chosen_status = random.choice(statuses)
                 data = self.conn.execute(
-                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' LIMIt 1;").fetchall()
+                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' AND user_id = '{user_id}' LIMIt 1;").fetchall()
             if chosen_status == 'Familiar':
                 self.update_word_status(data[0][0], 'Reviewed')
             else:
@@ -98,9 +100,9 @@ class DB:
         self.conn.execute(f"UPDATE words SET status = '{status}' WHERE id = '{word_id}';")
         self.conn.commit()
 
-    def select_all_by_word(self, word, category):
+    def select_all_by_word(self, word, category, user_id):
         word_data = self.conn.execute(
-            f"SELECT * FROM words WHERE word = '{word}' AND category = '{category}' LIMIt 1;").fetchall()
+            f"SELECT * FROM words WHERE word = '{word}' AND category = '{category}' AND user_id = '{user_id}' LIMIt 1;").fetchall()
         if word_data:
             return word_data[0][0], word_data[0][1], word_data[0][2], word_data[0][3]
         else:
@@ -114,18 +116,18 @@ class DB:
         else:
             return None
 
-    def select_random_row(self, category):
+    def select_random_row(self, category, user_id):
         if category == 'All':
             word_data = self.conn.execute(
-                f"SELECT word FROM words ORDER BY RANDOM() LIMIT 1").fetchone()
+                f"SELECT word FROM words WHERE user_id = '{user_id}' ORDER BY RANDOM() LIMIT 1").fetchone()
         else:
             word_data = self.conn.execute(
-                f"SELECT word FROM words WHERE category = '{category}' ORDER BY RANDOM() LIMIT 1").fetchone()
+                f"SELECT word FROM words WHERE category = '{category}' AND user_id = '{user_id}' ORDER BY RANDOM() LIMIT 1").fetchone()
         return word_data[0]
 
-    def select_count_by_category(self, category):
+    def select_count_by_category(self, category, user_id):
         count = self.conn.execute(
-            f"SELECT COUNT(id) FROM words WHERE category = '{category}';").fetchone()
+            f"SELECT COUNT(id) FROM words WHERE category = '{category}' AND user_id = '{user_id}';").fetchone()
         return count[0]
 
 
