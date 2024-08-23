@@ -35,9 +35,10 @@ class BotTypingHandler(StatesGroup):
         'no_examples_check': f"Looks like there\'s nothing here!\n\nWhat's your next move?",
         'square_one': "Back to square one, eh? Let's start fresh!",
         'no_words_to_learn': f"Looks like there are no words to study right now!\n\nAdd new words to your vocabulary collection to study later {emoji.emojize(":books:")}",
-        'words_ended': f"Those were all the new words! Add more to study later. Let's take the quiz {emoji.emojize(":rocket:")}",
+        'words_ended': f"Those were all the new words! Add more to study later. Let's take the quiz :light_bulb:",
         'quiz_time': f"That's all for now! Let's take a quiz {emoji.emojize(":rocket:")}",
-        'settings': f"Settings are up! What would you like to modify?"
+        'settings': f"Settings are up! What would you like to modify?",
+        'daily_reminder': f"Looks like you haven’t checked in with your word collection today {emoji.emojize(":calendar:")}\nJust a friendly reminder that you can explore and study any words you like whenever you're ready {emoji.emojize(":light_bulb:")}"
     }
 
     keyboards = {'init': [f"Check my word {emoji.emojize(":magnifying_glass_tilted_left:")}",

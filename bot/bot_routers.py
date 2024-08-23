@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from datetime import datetime, timedelta
 from aiogram.types import Message
 from dotenv import load_dotenv
+from aiogram.enums import ParseMode
 import emoji
 import os
 
@@ -34,7 +35,8 @@ class BotRouterHandler:
 
         self._setup_routes()
 
-        asyncio.create_task(self.send_daily_message())
+        asyncio.create_task(self.send_daily_reminder())
+        asyncio.create_task(self.send_word_of_the_day())
 
     def _setup_routes(self):
         self.router.message(Command("start"))(self.choose_initial_mode)
@@ -115,20 +117,45 @@ class BotRouterHandler:
             self.user_timers[user_id].cancel()
         self.user_timers[user_id] = asyncio.create_task(handle_inactivity())
 
-    async def send_daily_message(self):
+    async def send_daily_reminder(self):
         user_ids = self.allowed_user_id
         while True:
             for user_id in user_ids:
                 now = datetime.now()
-                target_time = now.replace(hour=20, minute=00, second=0, microsecond=0)
-
+                target_time = now.replace(hour=20, minute=0, second=0, microsecond=0)
                 if now > target_time:
                     target_time += timedelta(days=1)
-
                 wait_time = (target_time - now).total_seconds()
-
                 await asyncio.sleep(wait_time)
-                await self.bot.send_message(user_id, "Это ваше ежедневное сообщение!")
+                message_needed = self.db.select_date_delta(user_id)
+                if message_needed:
+                    await self.bot.send_message(user_id, self.typing_handler.bot_texts['daily_reminder'])
+                await asyncio.sleep(24 * 60 * 60)
+
+    async def send_word_of_the_day(self):
+        user_ids = self.allowed_user_id
+        while True:
+            for user_id in user_ids:
+                now = datetime.now()
+                target_time = now.replace(hour=12, minute=0, second=0, microsecond=0)
+                if now > target_time:
+                    target_time += timedelta(days=1)
+                wait_time = (target_time - now).total_seconds()
+                await asyncio.sleep(wait_time)
+                word_info = self.db.select_word_of_the_day(user_id)
+                if word_info:
+                    word = word_info[0]
+                    category = word_info[1]
+                    word_handling = LanguageProcessing(word)
+                    if category == 'Expression':
+                        translation = word_handling.get_word_translations(category)
+                        print_definitions = self.typing_handler.prepare_sentences_for_print(None, category, translation)
+                        await self.bot.send_message(user_id, f"Today's word of the day is <b>{word}</b>!\n\n{print_definitions}", parse_mode=ParseMode.HTML)
+                    else:
+                        definitions = word_handling.get_word_definitions(category)
+                        translation = word_handling.get_word_translations(category)
+                        print_definitions = self.typing_handler.prepare_sentences_for_print(definitions, category, translation)
+                        await self.bot.send_message(user_id, f"Today's word of the day is <b>{word}</b>!\n\n{print_definitions}", parse_mode=ParseMode.HTML)
                 await asyncio.sleep(24 * 60 * 60)
 
     async def get_settings(self, message: Message, state: FSMContext):

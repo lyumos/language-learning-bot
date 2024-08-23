@@ -3,7 +3,7 @@ import os
 import random
 import sqlite3
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 
@@ -130,7 +130,27 @@ class DB:
             f"SELECT COUNT(id) FROM words WHERE category = '{category}' AND user_id = '{user_id}';").fetchone()
         return count[0]
 
+    def select_date_delta(self, user_id):
+        latest_date_row = self.conn.execute(
+            f"SELECT modified_date FROM words WHERE user_id = '{user_id}' ORDER BY modified_date DESC LIMIT 1;").fetchone()
+        if latest_date_row:
+            latest_date = datetime.strptime(latest_date_row[0], '%Y-%m-%d %H:%M:%S.%f')
+            current_date = datetime.now()
+            date_difference = current_date.date() - latest_date.date()
+            if date_difference >= timedelta(days=1):
+                return True
+            else:
+                return False
+        else:
+            return False
 
+    def select_word_of_the_day(self, user_id):
+        word_of_the_day = self.conn.execute(
+            f"SELECT word, category FROM words WHERE user_id = '{user_id}' AND status <> 'New' ORDER BY RANDOM() DESC LIMIT 1;").fetchone()
+        if word_of_the_day:
+            return word_of_the_day[0], word_of_the_day[1]
+        else:
+            return False
 
 if __name__ == "__main__":
     load_dotenv()
@@ -142,6 +162,7 @@ if __name__ == "__main__":
 
     # print(db.select_words_by_status('Familiar/Reviewed'))
     # print(db.select_all_by_word_id('0c4a349b-439e-4f9f-90b6-1ddfadab9f99'))
-    print(db.select_count_by_category('Adjective'))
+    # print(db.select_count_by_category('Adjective'))
+    print(db.select_word_of_the_day('320803022'))
     # print(db.select_all_by_word('trepidation', 'Noun'))
     # print(db.db_path)
