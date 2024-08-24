@@ -20,6 +20,8 @@ class BotTypingHandler(StatesGroup):
     repeat_start = State()
     check_test_repeat = State()
     settings_choice = State()
+    modify_daily_reminder = State()
+    modify_word_of_the_day = State()
 
     def __init__(self, bot_db: DB):
         self.db = bot_db
@@ -38,6 +40,7 @@ class BotTypingHandler(StatesGroup):
         'words_ended': f"Those were all the new words! Add more to study later. Let's take the quiz :light_bulb:",
         'quiz_time': f"That's all for now! Let's take a quiz {emoji.emojize(":rocket:")}",
         'settings': f"Settings are up! What would you like to modify?",
+        'modify_settings': f"Would you like to enable/disable it?",
         'daily_reminder': f"Looks like you haven’t checked in with your word collection today {emoji.emojize(":calendar:")}\nJust a friendly reminder that you can explore and study any words you like whenever you're ready {emoji.emojize(":light_bulb:")}"
     }
 
@@ -52,7 +55,8 @@ class BotTypingHandler(StatesGroup):
                                                 f"{emoji.emojize(":chequered_flag:")}"],
                  'happy_face': f"{emoji.emojize(":rocket:")}",
                  'next': [f"{emoji.emojize(":right_arrow:")}"],
-                 'settings': ['Notifications', 'Word of the day', 'Quiz']
+                 'settings': ['Daily reminder', 'Word of the day'],
+                 'enable/disable': ['Enable', 'Disable']
                  }
 
     @staticmethod

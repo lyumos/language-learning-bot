@@ -8,8 +8,8 @@ CREATE TABLE "words" (
 	PRIMARY KEY("id")
 );
 CREATE TABLE "settings" (
-    "user_id" TEXT NOT NULL UNIQUE,
-    "daily_message_enabled" TEXT NOT NULL,
-    "review_message_enabled" TEXT NOT NULL,
-    PRIMARY KEY("user_id")
+	"user_id"	TEXT NOT NULL UNIQUE,
+	"daily_reminder"	TEXT NOT NULL DEFAULT 'enabled',
+	"word_of_the_day"	TEXT NOT NULL DEFAULT 'enabled',
+	PRIMARY KEY("user_id")
 );

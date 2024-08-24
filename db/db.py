@@ -40,9 +40,9 @@ class DB:
             PRIMARY KEY("id")
         );
         CREATE TABLE "settings" (
-            "user_id" TEXT NOT NULL UNIQUE,
-            "daily_message_enabled" TEXT NOT NULL,
-            "review_message_enabled" TEXT NOT NULL,
+            "user_id"	TEXT NOT NULL UNIQUE,
+            "daily_reminder"	TEXT NOT NULL DEFAULT 'enabled',
+            "word_of_the_day"	TEXT NOT NULL DEFAULT 'enabled',
             PRIMARY KEY("user_id")
         );
         """
@@ -57,6 +57,14 @@ class DB:
         self.conn.execute(f'INSERT INTO words (id, word, category, status, modified_date, user_id)'
                           f'VALUES ("{word_uuid}","{word}", "{category}", "New", "{current_datetime}", "{user_id}");')
         self.conn.commit()
+
+    def insert_user_settings(self, user_id):
+        user_info = self.conn.execute(
+            f"SELECT user_id FROM settings WHERE user_id = '{user_id}';").fetchone()
+        if not user_info:
+            self.conn.execute(f'INSERT INTO settings (user_id, daily_reminder, word_of_the_day)'
+                              f'VALUES ("{user_id}", "enabled", "enabled");')
+            self.conn.commit()
 
     def select_words_by_status(self, status, user_id):
         if status == 'New/Acquainted':
@@ -98,6 +106,10 @@ class DB:
 
     def update_word_status(self, word_id, status):
         self.conn.execute(f"UPDATE words SET status = '{status}' WHERE id = '{word_id}';")
+        self.conn.commit()
+
+    def update_settings(self, user_id, setting, choice):
+        self.conn.execute(f"UPDATE settings SET {setting} = '{choice}' WHERE user_id = '{user_id}';")
         self.conn.commit()
 
     def select_all_by_word(self, word, category, user_id):
@@ -152,6 +164,18 @@ class DB:
         else:
             return False
 
+    def select_setting(self, user_id, setting):
+        setting = self.conn.execute(
+            f"SELECT {setting} FROM settings WHERE user_id = '{user_id}';").fetchone()
+        if setting:
+            if setting[0] == 'enabled':
+                return True
+            else:
+                return False
+        else:
+            return False
+
+
 if __name__ == "__main__":
     load_dotenv()
     # db_name = os.getenv('DB_NAME')
@@ -163,6 +187,7 @@ if __name__ == "__main__":
     # print(db.select_words_by_status('Familiar/Reviewed'))
     # print(db.select_all_by_word_id('0c4a349b-439e-4f9f-90b6-1ddfadab9f99'))
     # print(db.select_count_by_category('Adjective'))
-    print(db.select_word_of_the_day('320803022'))
+    # print(db.select_word_of_the_day('7515451355'))
+    # print(db.select_date_delta('320803022'))
     # print(db.select_all_by_word('trepidation', 'Noun'))
     # print(db.db_path)

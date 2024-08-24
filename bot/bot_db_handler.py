@@ -59,3 +59,9 @@ class BotDBHandler:
                 await self.bot_typer.type_reply(message,
                                                 f"Already in your vocabulary collection!\n\nWord: {word_data[1]}\nCategory: {word_data[2]}\nStatus: {word_data[3]}\n\nLet's try again {emoji.emojize(":ghost:")}",
                                                 self.bot_typer.keyboards['init'])
+
+    async def modify_settings(self, user_id, setting, choice):
+        self.db.update_settings(user_id, setting, choice)
+
+    async def add_user_settings(self, user_id):
+        self.db.insert_user_settings(user_id)

@@ -39,8 +39,26 @@ class BotRouterHandler:
         asyncio.create_task(self.send_word_of_the_day())
 
     def _setup_routes(self):
-        self.router.message(Command("start"))(self.choose_initial_mode)
         self.router.message(Command("settings"))(self.get_settings)
+        self.router.message(
+            BotTypingHandler.settings_choice,
+            F.text.in_([f"Daily reminder"]))(self.modify_daily_reminder)
+        self.router.message(
+            BotTypingHandler.modify_daily_reminder,
+            F.text.in_([f"Enable"]))(self.enable_daily_reminder)
+        self.router.message(
+            BotTypingHandler.modify_daily_reminder,
+            F.text.in_([f"Disable"]))(self.disable_daily_reminder)
+        self.router.message(
+            BotTypingHandler.settings_choice,
+            F.text.in_([f"Word of the day"]))(self.modify_word_of_the_day)
+        self.router.message(
+            BotTypingHandler.modify_word_of_the_day,
+            F.text.in_([f"Enable"]))(self.enable_word_of_the_day)
+        self.router.message(
+            BotTypingHandler.modify_word_of_the_day,
+            F.text.in_([f"Disable"]))(self.disable_word_of_the_day)
+        self.router.message(Command("start"))(self.choose_initial_mode)
         self.router.message(
             BotTypingHandler.start_mode_choice,
             F.text.in_([self.typing_handler.bot_texts['word_check']])
@@ -117,31 +135,35 @@ class BotRouterHandler:
             self.user_timers[user_id].cancel()
         self.user_timers[user_id] = asyncio.create_task(handle_inactivity())
 
+    async def send_reminder_to_user(self, user_id):
+        while True:
+            now = datetime.now()
+            target_time = now.replace(hour=20, minute=0, second=0, microsecond=0)
+            if now > target_time:
+                target_time += timedelta(days=1)
+            wait_time = (target_time - now).total_seconds()
+            await asyncio.sleep(wait_time)
+            message_needed = self.db.select_date_delta(user_id)
+            reminder_enabled = self.db.select_setting(user_id, 'daily_reminder')
+            if message_needed and reminder_enabled:
+                await self.bot.send_message(user_id, self.typing_handler.bot_texts['daily_reminder'])
+            await asyncio.sleep(24 * 60 * 60)
+
     async def send_daily_reminder(self):
         user_ids = self.allowed_user_id
-        while True:
-            for user_id in user_ids:
-                now = datetime.now()
-                target_time = now.replace(hour=20, minute=0, second=0, microsecond=0)
-                if now > target_time:
-                    target_time += timedelta(days=1)
-                wait_time = (target_time - now).total_seconds()
-                await asyncio.sleep(wait_time)
-                message_needed = self.db.select_date_delta(user_id)
-                if message_needed:
-                    await self.bot.send_message(user_id, self.typing_handler.bot_texts['daily_reminder'])
-                await asyncio.sleep(24 * 60 * 60)
+        tasks = [asyncio.create_task(self.send_reminder_to_user(user_id)) for user_id in user_ids]
+        await asyncio.gather(*tasks)
 
-    async def send_word_of_the_day(self):
-        user_ids = self.allowed_user_id
+    async def send_word_of_the_day_to_user(self, user_id):
         while True:
-            for user_id in user_ids:
-                now = datetime.now()
-                target_time = now.replace(hour=12, minute=0, second=0, microsecond=0)
-                if now > target_time:
-                    target_time += timedelta(days=1)
-                wait_time = (target_time - now).total_seconds()
-                await asyncio.sleep(wait_time)
+            now = datetime.now()
+            target_time = now.replace(hour=12, minute=0, second=0, microsecond=0)
+            if now > target_time:
+                target_time += timedelta(days=1)
+            wait_time = (target_time - now).total_seconds()
+            await asyncio.sleep(wait_time)
+            notification_enabled = self.db.select_setting(user_id, 'word_of_the_day')
+            if notification_enabled:
                 word_info = self.db.select_word_of_the_day(user_id)
                 if word_info:
                     word = word_info[0]
@@ -150,13 +172,22 @@ class BotRouterHandler:
                     if category == 'Expression':
                         translation = word_handling.get_word_translations(category)
                         print_definitions = self.typing_handler.prepare_sentences_for_print(None, category, translation)
-                        await self.bot.send_message(user_id, f"Today's word of the day is <b>{word}</b>!\n\n{print_definitions}", parse_mode=ParseMode.HTML)
                     else:
                         definitions = word_handling.get_word_definitions(category)
                         translation = word_handling.get_word_translations(category)
-                        print_definitions = self.typing_handler.prepare_sentences_for_print(definitions, category, translation)
-                        await self.bot.send_message(user_id, f"Today's word of the day is <b>{word}</b>!\n\n{print_definitions}", parse_mode=ParseMode.HTML)
-                await asyncio.sleep(24 * 60 * 60)
+                        print_definitions = self.typing_handler.prepare_sentences_for_print(definitions, category,
+                                                                                            translation)
+                    await self.bot.send_message(
+                        user_id,
+                        f"Today's word of the day is <b>{word}</b>!\n\n{print_definitions}",
+                        parse_mode=ParseMode.HTML
+                    )
+            await asyncio.sleep(24 * 60 * 60)
+
+    async def send_word_of_the_day(self):
+        user_ids = self.allowed_user_id
+        tasks = [asyncio.create_task(self.send_word_of_the_day_to_user(user_id)) for user_id in user_ids]
+        await asyncio.gather(*tasks)
 
     async def get_settings(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):
@@ -166,11 +197,48 @@ class BotRouterHandler:
                                               self.typing_handler.keyboards['settings'])
         await state.set_state(BotTypingHandler.settings_choice)
 
+    async def modify_daily_reminder(self, message: Message, state: FSMContext):
+        if not await self.user_authorized(message):
+            return
+        await self.set_inactivity_timer(message.from_user.id, state)
+        await self.typing_handler.type_reply(message, self.typing_handler.bot_texts['modify_settings'],
+                                             self.typing_handler.keyboards['enable/disable'])
+        await state.set_state(BotTypingHandler.modify_daily_reminder)
+
+    async def enable_daily_reminder(self, message: Message):
+        user_id = str(message.from_user.id)
+        await self.db_handler.modify_settings(user_id, 'daily_reminder', 'enabled')
+        await self.typing_handler.type_reply(message, "Daily reminder enabled! Tap /settings or /start to continue")
+
+    async def disable_daily_reminder(self, message: Message):
+        user_id = str(message.from_user.id)
+        await self.db_handler.modify_settings(user_id, 'daily_reminder', 'disabled')
+        await self.typing_handler.type_reply(message, "Daily reminder disabled! Tap /settings or /start to continue")
+
+    async def modify_word_of_the_day(self, message: Message, state: FSMContext):
+        if not await self.user_authorized(message):
+            return
+        await self.set_inactivity_timer(message.from_user.id, state)
+        await self.typing_handler.type_reply(message, self.typing_handler.bot_texts['modify_settings'],
+                                             self.typing_handler.keyboards['enable/disable'])
+        await state.set_state(BotTypingHandler.modify_word_of_the_day)
+
+    async def enable_word_of_the_day(self, message: Message):
+        user_id = str(message.from_user.id)
+        await self.db_handler.modify_settings(user_id, 'word_of_the_day', 'enabled')
+        await self.typing_handler.type_reply(message, "Word of the day enabled! Tap /settings or /start to continue")
+
+    async def disable_word_of_the_day(self, message: Message):
+        user_id = str(message.from_user.id)
+        await self.db_handler.modify_settings(user_id, 'word_of_the_day', 'disabled')
+        await self.typing_handler.type_reply(message, "Word of the day disabled! Tap /settings or /start to continue")
+
     async def choose_initial_mode(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):
             return
         await self.typing_handler.type_answer(message, self.typing_handler.bot_texts['welcome'],
                                               self.typing_handler.keyboards['init'])
+        await self.db_handler.add_user_settings(str(message.from_user.id))
         await state.set_state(BotTypingHandler.start_mode_choice)
         await self.set_inactivity_timer(message.from_user.id, state)
 
