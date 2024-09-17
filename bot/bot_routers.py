@@ -138,7 +138,7 @@ class BotRouterHandler:
     async def send_reminder_to_user(self, user_id):
         while True:
             now = datetime.now()
-            target_time = now.replace(hour=20, minute=0, second=0, microsecond=0)
+            target_time = now.replace(hour=17, minute=0, second=0, microsecond=0)
             if now > target_time:
                 target_time += timedelta(days=1)
             wait_time = (target_time - now).total_seconds()
@@ -147,7 +147,7 @@ class BotRouterHandler:
             reminder_enabled = self.db.select_setting(user_id, 'daily_reminder')
             if message_needed and reminder_enabled:
                 await self.bot.send_message(user_id, self.typing_handler.bot_texts['daily_reminder'])
-            await asyncio.sleep(24 * 60 * 60)
+            # await asyncio.sleep(24 * 60 * 60)
 
     async def send_daily_reminder(self):
         user_ids = self.allowed_user_id
@@ -157,7 +157,7 @@ class BotRouterHandler:
     async def send_word_of_the_day_to_user(self, user_id):
         while True:
             now = datetime.now()
-            target_time = now.replace(hour=12, minute=0, second=0, microsecond=0)
+            target_time = now.replace(hour=9, minute=0, second=0, microsecond=0)
             if now > target_time:
                 target_time += timedelta(days=1)
             wait_time = (target_time - now).total_seconds()
@@ -182,7 +182,7 @@ class BotRouterHandler:
                         f"Today's word of the day is <b>{word}</b>!\n\n{print_definitions}",
                         parse_mode=ParseMode.HTML
                     )
-            await asyncio.sleep(24 * 60 * 60)
+            # await asyncio.sleep(24 * 60 * 60)
 
     async def send_word_of_the_day(self):
         user_ids = self.allowed_user_id
