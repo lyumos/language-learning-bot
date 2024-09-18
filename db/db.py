@@ -77,14 +77,14 @@ class DB:
                     raise IndexError
                 chosen_status = random.choice(statuses)
                 data = self.conn.execute(
-                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' AND user_id = '{user_id}' LIMIt 1;").fetchall()
+                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' AND user_id = '{user_id}' ORDER BY RANDOM() LIMIt 1;").fetchall()
             if chosen_status == 'New':
                 self.update_word_status(data[0][0], 'Acquainted')
             else:
                 self.update_word_status(data[0][0], 'Familiar')
         elif status == 'New':
             data = self.conn.execute(
-                f"SELECT id, word, category FROM words WHERE status = '{status}' AND user_id = '{user_id}' LIMIt 1;").fetchall()
+                f"SELECT id, word, category FROM words WHERE status = '{status}' AND user_id = '{user_id}' ORDER BY RANDOM() LIMIt 1;").fetchall()
             self.update_word_status(data[0][0], 'Acquainted')
             chosen_status = 'New'
         elif status == 'Familiar/Reviewed':
@@ -97,7 +97,7 @@ class DB:
                     raise IndexError
                 chosen_status = random.choice(statuses)
                 data = self.conn.execute(
-                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' AND user_id = '{user_id}' LIMIt 1;").fetchall()
+                    f"SELECT id, word, category FROM words WHERE status = '{chosen_status}' AND user_id = '{user_id}' ORDER BY RANDOM() LIMIt 1;").fetchall()
             if chosen_status == 'Familiar':
                 self.update_word_status(data[0][0], 'Reviewed')
             else:
