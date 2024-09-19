@@ -1,6 +1,0 @@
-2024-08-23 19:13:50,021 - WARNING - dotenv.main - Python-dotenv could not parse statement starting at line 4
-2024-08-23 19:13:50,023 - INFO - aiogram.dispatcher - Start polling
-2024-08-23 19:13:50,175 - INFO - aiogram.dispatcher - Run polling for bot @testlanguagememorisationbot id=7134394194 - 'testlanguagememorisation'
-2024-08-23 19:21:32,638 - WARNING - aiogram.dispatcher - Received SIGINT signal
-2024-08-23 19:21:32,639 - INFO - aiogram.dispatcher - Polling stopped for bot @testlanguagememorisationbot id=7134394194 - 'testlanguagememorisation'
-2024-08-23 19:21:32,639 - INFO - aiogram.dispatcher - Polling stopped
