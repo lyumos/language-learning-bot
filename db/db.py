@@ -3,9 +3,7 @@ import os
 import random
 import uuid
 from datetime import datetime, timedelta
-
 import psycopg2
-from psycopg2 import sql
 from dotenv import load_dotenv
 
 
