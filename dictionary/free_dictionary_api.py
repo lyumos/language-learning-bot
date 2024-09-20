@@ -1,7 +1,5 @@
 import requests
 import json
-import os
-import aiohttp
 
 
 class FreeDictionaryAPI:

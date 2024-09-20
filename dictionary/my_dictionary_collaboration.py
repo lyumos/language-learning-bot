@@ -91,13 +91,3 @@ class LanguageProcessing:
 
     def get_audio(self):
         return self.fda_version.get_audio_link()
-
-
-if __name__ == '__main__':
-    word = LanguageProcessing('try')
-    # print(word.get_word_categories())
-    # print(word.get_word_translations('Noun'))
-    # print(word.get_word_definitions('All'))
-    print(word.get_word_examples('Noun'))
-    # print(word.get_relations('All'))
-    # print(word.get_audio())

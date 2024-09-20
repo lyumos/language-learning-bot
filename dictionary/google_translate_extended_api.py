@@ -93,11 +93,3 @@ class GoogleTranslateExtendedAPI:
             return examples
         else:
             return None
-
-
-if __name__ == '__main__':
-    word = GoogleTranslateExtendedAPI('undivided attention')
-
-    # print(word.meaning)
-    # print(word.get_word_definitions('All'))
-    print(word.get_translations('All'))
