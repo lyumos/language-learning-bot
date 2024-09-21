@@ -13,18 +13,16 @@ class DB:
     def __init__(self):
         load_dotenv()
 
-        self.db_name = os.getenv('DB_NAME', 'mydatabase')
-        self.db_user = os.getenv('DB_USER', 'your_user')
-        self.db_password = os.getenv('DB_PASSWORD', 'your_password')
-        self.db_host = os.getenv('DB_HOST', 'localhost')
-        self.db_port = os.getenv('DB_PORT', '5432')
+        self.db_name = os.getenv('POSTGRES_DB')
+        self.db_user = os.getenv('POSTGRES_USER')
+        self.db_password = os.getenv('POSTGRES_PASSWORD')
+        self.db_host = os.getenv('DB_HOST')
 
         self.conn = psycopg2.connect(
             dbname=self.db_name,
             user=self.db_user,
             password=self.db_password,
-            host=self.db_host,
-            port=self.db_port
+            host=self.db_host
         )
         self.cursor = self.conn.cursor()
 
