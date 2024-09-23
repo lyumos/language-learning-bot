@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  language_learning_bot:
+    build: .
+    container_name: language_learning_bot
+    env_file: .env
+    volumes:
+      - ./logs:/language_learning_bot/logs
+    depends_on:
+      - db
+    networks:
+      - bot_network
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bot_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  bot_network:
+    driver: bridge
