@@ -17,6 +17,9 @@ RUN apt-get update && \
 RUN pip install --upgrade pip && pip install -r requirements.txt
 RUN npm install google-translate-extended-api
 
+# Создание пустой директории logs
+RUN mkdir -p /language_learning_bot/logs
+
 # Переменные окружения
 ENV PYTHONUNBUFFERED=1
 
