@@ -20,7 +20,7 @@
 * Библиотеки:
   * aiogram
   * aiohttp
-  * argostranslate
+  * mtranslate
   * emoji
   * python-dotenv
   * requests

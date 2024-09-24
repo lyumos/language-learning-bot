@@ -125,14 +125,3 @@ class FreeDictionaryAPI:
                 return None
         else:
             return None
-
-
-if __name__ == '__main__':
-    word = FreeDictionaryAPI('try')
-    # print(word.meanings)
-    # print(word.get_relations('Noun'))
-    audio = word.get_audio()
-    print(audio)
-    # print(word.categories)
-    # print(word.get_word_definitions('Interjection'))
-    # print(word.get_examples('All'))
