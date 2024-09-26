@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   language_learning_bot:
-    build: .
+    image: language_learning_bot:latest
     container_name: language_learning_bot
     env_file: .env
     volumes:
