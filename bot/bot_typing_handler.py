@@ -55,7 +55,7 @@ class BotTypingHandler(StatesGroup):
                                                 f"{emoji.emojize(":chequered_flag:")}"],
                  'happy_face': f"{emoji.emojize(":rocket:")}",
                  'next': [f"{emoji.emojize(":right_arrow:")}"],
-                 'settings': ['Daily reminder', 'Word of the day'],
+                 'settings': ['Daily reminder', 'Word of the day', 'Get stats'],
                  'enable/disable': ['Enable', 'Disable']
                  }
 

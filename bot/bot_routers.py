@@ -58,6 +58,9 @@ class BotRouterHandler:
         self.router.message(
             BotTypingHandler.modify_word_of_the_day,
             F.text.in_([f"Disable"]))(self.disable_word_of_the_day)
+        self.router.message(
+            BotTypingHandler.settings_choice,
+            F.text.in_([f"Get stats"]))(self.show_stats)
         self.router.message(Command("start"))(self.choose_initial_mode)
         self.router.message(
             BotTypingHandler.start_mode_choice,
@@ -232,6 +235,18 @@ class BotRouterHandler:
         user_id = str(message.from_user.id)
         await self.db_handler.modify_settings(user_id, 'word_of_the_day', 'disabled')
         await self.typing_handler.type_reply(message, "Word of the day disabled! Tap /settings or /start to continue")
+
+    async def show_stats(self, message: Message, state: FSMContext):
+        if not await self.user_authorized(message):
+            return
+        await self.set_inactivity_timer(message.from_user.id, state)
+        user_id = str(message.from_user.id)
+        words_count = await self.db_handler.get_stats(user_id)
+        await self.typing_handler.type_reply(message, f"Here's your progress so far! {emoji.emojize(":party_popper:")}\n\n"
+                                                      f"You've added {words_count[0]} new words!\n"
+                                                      f"Still working on {words_count[1]} words.\n"
+                                                      f"And you’ve mastered {words_count[2]} words already! {emoji.emojize(":flexed_biceps_light_skin_tone:")}\n\n"
+                                                      f"Keep it up, and tap /settings or /start when you're ready to continue!")
 
     async def choose_initial_mode(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):

@@ -31,7 +31,8 @@ class BotDBHandler:
             parts_of_speech = await self.bot_typer.get_state_info(state, 'parts_of_speech')
             for available_category in parts_of_speech:
                 if available_category != 'All':
-                    word_data = self.db.select_all_by_word(new_word, available_category.title(), user_id=str(message.from_user.id))
+                    word_data = self.db.select_all_by_word(new_word, available_category.title(),
+                                                           user_id=str(message.from_user.id))
                     if not word_data:
                         count += 1
                         self.db.insert_new_word(new_word, available_category.title(), user_id=str(message.from_user.id))
@@ -44,7 +45,7 @@ class BotDBHandler:
                                                 self.bot_typer.keyboards['init'])
         else:
             word_data = self.db.select_all_by_word(new_word, category.title(), user_id=str(message.from_user.id))
-        # Если такое слово еще не добавлено в БД
+            # Если такое слово еще не добавлено в БД
             if word_data is None:
                 if category.title() == 'All':
                     parts_of_speech = await self.bot_typer.get_state_info(state, 'parts_of_speech')
@@ -65,3 +66,7 @@ class BotDBHandler:
 
     async def add_user_settings(self, user_id):
         self.db.insert_user_settings(user_id)
+
+    async def get_stats(self, user_id):
+        words_count = self.db.select_stats(user_id)
+        return words_count

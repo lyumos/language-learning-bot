@@ -184,7 +184,8 @@ class DB:
 
     def select_word_of_the_day(self, user_id):
         self.cursor.execute(
-            f"SELECT word, category FROM words WHERE user_id = %s AND status <> 'New' ORDER BY RANDOM() LIMIT 1;", (user_id,)
+            f"SELECT word, category FROM words WHERE user_id = %s AND status <> 'New' ORDER BY RANDOM() LIMIT 1;",
+            (user_id,)
         )
         word_of_the_day = self.cursor.fetchone()
         if word_of_the_day:
@@ -198,3 +199,24 @@ class DB:
         )
         setting_value = self.cursor.fetchone()
         return setting_value[0] == 'enabled' if setting_value else False
+
+    def select_stats(self, user_id):
+        self.cursor.execute(
+            f"SELECT COUNT(*) FROM words WHERE user_id = %s AND status = 'New';", (user_id,)
+        )
+        new_words_count = self.cursor.fetchone()
+        self.cursor.execute(
+            f"SELECT COUNT(*) FROM words WHERE user_id = %s AND status = 'Acquainted' OR status = 'Familiar' OR status = 'Reviewed';",
+            (user_id,)
+        )
+        words_to_learn_count = self.cursor.fetchone()
+        self.cursor.execute(
+            f"SELECT COUNT(*) FROM words WHERE user_id = %s AND status = 'Memorized';",
+            (user_id,)
+        )
+        memorized_words_count = self.cursor.fetchone()
+        return new_words_count[0], words_to_learn_count[0], memorized_words_count[0]
+
+if __name__ == '__main__':
+    db = DB()
+    print(db.select_stats('320803022'))
