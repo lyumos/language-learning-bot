@@ -39,6 +39,8 @@ class BotRouterHandler:
         asyncio.create_task(self.send_word_of_the_day())
 
     def _setup_routes(self):
+        self.router.message(Command("help"))(self.get_help)
+        self.router.message(Command("stats"))(self.show_stats)
         self.router.message(Command("settings"))(self.get_settings)
         self.router.message(
             BotTypingHandler.settings_choice,
@@ -58,9 +60,6 @@ class BotRouterHandler:
         self.router.message(
             BotTypingHandler.modify_word_of_the_day,
             F.text.in_([f"Disable"]))(self.disable_word_of_the_day)
-        self.router.message(
-            BotTypingHandler.settings_choice,
-            F.text.in_([f"Get stats"]))(self.show_stats)
         self.router.message(Command("start"))(self.choose_initial_mode)
         self.router.message(
             BotTypingHandler.start_mode_choice,
@@ -129,10 +128,9 @@ class BotRouterHandler:
         async def handle_inactivity():
             await asyncio.sleep(self.inactivity_timeout)
             await state.set_state(BotTypingHandler.start_mode_choice)
-            await self.bot.send_message(user_id,
-                                        f"We're returning to the /start because there hasn't been any activity for a while",
+            await self.bot.send_message(user_id, self.typing_handler.bot_texts['inactivity_text'],
                                         reply_markup=self.typing_handler.show_keyboard(
-                                            self.typing_handler.keyboards['init']))
+                                        self.typing_handler.keyboards['init']))
 
         if user_id in self.user_timers:
             self.user_timers[user_id].cancel()
@@ -150,7 +148,6 @@ class BotRouterHandler:
             reminder_enabled = self.db.select_setting(user_id, 'daily_reminder')
             if message_needed and reminder_enabled:
                 await self.bot.send_message(user_id, self.typing_handler.bot_texts['daily_reminder'])
-            # await asyncio.sleep(24 * 60 * 60)
 
     async def send_daily_reminder(self):
         user_ids = self.allowed_user_id
@@ -185,12 +182,17 @@ class BotRouterHandler:
                         f"Today's word of the day is <b>{word}</b>!\n\n{print_definitions}",
                         parse_mode=ParseMode.HTML
                     )
-            # await asyncio.sleep(24 * 60 * 60)
 
     async def send_word_of_the_day(self):
         user_ids = self.allowed_user_id
         tasks = [asyncio.create_task(self.send_word_of_the_day_to_user(user_id)) for user_id in user_ids]
         await asyncio.gather(*tasks)
+
+    async def get_help(self, message: Message, state: FSMContext):
+        if not await self.user_authorized(message):
+            return
+        await self.set_inactivity_timer(message.from_user.id, state)
+        await self.typing_handler.type_reply(message, self.typing_handler.bot_texts['help_text'])
 
     async def get_settings(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):
@@ -246,7 +248,7 @@ class BotRouterHandler:
                                                       f"You've added {words_count[0]} new words!\n"
                                                       f"Still working on {words_count[1]} words.\n"
                                                       f"And you’ve mastered {words_count[2]} words already! {emoji.emojize(":flexed_biceps_light_skin_tone:")}\n\n"
-                                                      f"Keep it up, and tap /settings or /start when you're ready to continue!")
+                                                      f"Keep it up, /start when you're ready to continue!")
 
     async def choose_initial_mode(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):

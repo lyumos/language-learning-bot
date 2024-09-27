@@ -27,7 +27,7 @@ class BotTypingHandler(StatesGroup):
         self.db = bot_db
 
     bot_texts = {
-        'welcome': f"Hi {emoji.emojize(":vulcan_salute_light_skin_tone:")}\nYou can choose to: check a word, learn words you've added, or review words you've already learned",
+        'welcome': f"Here you can choose to {emoji.emojize(":down_arrow:")}",
         'word_check': f"Check my word {emoji.emojize(":magnifying_glass_tilted_left:")}",
         'writing_hand': f"{emoji.emojize(":writing_hand_light_skin_tone:")}",
         'wrong_word': f"Whoops, that's not a real word!\n\nLet's try again {emoji.emojize(":ghost:")}",
@@ -41,7 +41,9 @@ class BotTypingHandler(StatesGroup):
         'quiz_time': f"That's all for now! Let's take a quiz {emoji.emojize(":rocket:")}",
         'settings': f"Settings are up! What would you like to modify?",
         'modify_settings': f"Would you like to enable/disable it?",
-        'daily_reminder': f"Looks like you haven’t checked in with your word collection today {emoji.emojize(":calendar:")}\nJust a friendly reminder that you can explore and study any words you like whenever you're ready {emoji.emojize(":light_bulb:")}"
+        'daily_reminder': f"Looks like you haven’t checked in with your word collection today {emoji.emojize(":calendar:")}\nJust a friendly reminder that you can explore and study any words you like whenever you're ready {emoji.emojize(":light_bulb:")}",
+        'inactivity_text': f"Hey, it's been quiet for a bit, so we’re back to the basics. Here’s what I can do for you:\n\n{emoji.emojize(":open_book:")} /help – Get help anytime\n{emoji.emojize(":rocket:")} /start – Kick things off with me\n{emoji.emojize(":gear:")} /settings – Manage your daily notifications\n{emoji.emojize(":bar_chart:")} /stats – See your word stats\n\nUntil next time!",
+        'help_text': f"This Telegram bot helps you memorize English words in a fun, semi-game format. You can add English words to your personal collection, get information about them, and study the ones you choose.\n\nTo get started, just hit /start, then check out the words you're interested in. Use the '+' button to add them to your collection for later learning.\n\nThe bot also sends daily reminders, which you can turn off with /settings. Want to see your progress? Just type /stats to view your word stats."
     }
 
     keyboards = {'init': [f"Check my word {emoji.emojize(":magnifying_glass_tilted_left:")}",
@@ -55,7 +57,7 @@ class BotTypingHandler(StatesGroup):
                                                 f"{emoji.emojize(":chequered_flag:")}"],
                  'happy_face': f"{emoji.emojize(":rocket:")}",
                  'next': [f"{emoji.emojize(":right_arrow:")}"],
-                 'settings': ['Daily reminder', 'Word of the day', 'Get stats'],
+                 'settings': ['Daily reminder', 'Word of the day'],
                  'enable/disable': ['Enable', 'Disable']
                  }
 
