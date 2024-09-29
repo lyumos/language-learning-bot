@@ -255,6 +255,7 @@ class BotRouterHandler:
             return
         await self.typing_handler.type_answer(message, self.typing_handler.bot_texts['welcome'],
                                               self.typing_handler.keyboards['init'])
+        await self.db_handler.check_lost_words()
         await self.db_handler.add_user_settings(str(message.from_user.id))
         await state.set_state(BotTypingHandler.start_mode_choice)
         await self.set_inactivity_timer(message.from_user.id, state)

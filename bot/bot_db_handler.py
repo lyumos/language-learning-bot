@@ -70,3 +70,6 @@ class BotDBHandler:
     async def get_stats(self, user_id):
         words_count = self.db.select_stats(user_id)
         return words_count
+
+    async def check_lost_words(self):
+        self.db.select_shown_words()

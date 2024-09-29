@@ -217,6 +217,11 @@ class DB:
         memorized_words_count = self.cursor.fetchone()
         return new_words_count[0], words_to_learn_count[0], memorized_words_count[0]
 
-if __name__ == '__main__':
-    db = DB()
-    print(db.select_stats('320803022'))
+    def select_shown_words(self):
+        self.cursor.execute(
+            f"SELECT id FROM words WHERE status = 'Shown';"
+        )
+        data = self.cursor.fetchall()
+        if data:
+            for word_id in data:
+                self.update_word_status(word_id, 'New')
