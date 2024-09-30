@@ -42,7 +42,9 @@ class DB:
         CREATE TABLE IF NOT EXISTS settings (
             user_id TEXT PRIMARY KEY,
             daily_reminder TEXT NOT NULL DEFAULT 'enabled',
-            word_of_the_day TEXT NOT NULL DEFAULT 'enabled'
+            word_of_the_day TEXT NOT NULL DEFAULT 'enabled',
+            quiz_words_count TEXT NOT NULL DEFAULT '5',
+            quiz_exercises_count TEXT NOT NULL DEFAULT '5'
         );
         """
         self.cursor.execute(sql_script)
@@ -198,7 +200,10 @@ class DB:
             f"SELECT {setting} FROM settings WHERE user_id = %s;", (user_id,)
         )
         setting_value = self.cursor.fetchone()
-        return setting_value[0] == 'enabled' if setting_value else False
+        if setting != 'quiz_words_count' and setting != 'quiz_exercises_count':
+            return setting_value[0] == 'enabled' if setting_value else False
+        else:
+            return setting_value[0]
 
     def select_stats(self, user_id):
         self.cursor.execute(

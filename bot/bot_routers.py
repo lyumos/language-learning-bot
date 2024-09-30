@@ -31,6 +31,7 @@ class BotRouterHandler:
         self.db = DB()
         self.typing_handler = BotTypingHandler(self.db)
         self.db_handler = BotDBHandler(self.typing_handler, self.db)
+
         self.quiz_handler = BotQuizHandler(self.typing_handler, self.db_handler, self.db)
 
         self._setup_routes()
@@ -60,6 +61,18 @@ class BotRouterHandler:
         self.router.message(
             BotTypingHandler.modify_word_of_the_day,
             F.text.in_([f"Disable"]))(self.disable_word_of_the_day)
+        self.router.message(
+            BotTypingHandler.settings_choice,
+            F.text.in_([f"Quiz words"]))(self.modify_quiz_words_count)
+        self.router.message(
+            BotTypingHandler.modify_quiz_words_count
+        )(self.set_quiz_words_count)
+        self.router.message(
+            BotTypingHandler.settings_choice,
+            F.text.in_([f"Number of exercises"]))(self.modify_quiz_exercises_count)
+        self.router.message(
+            BotTypingHandler.modify_quiz_exercises_count
+        )(self.set_quiz_exercises_count)
         self.router.message(Command("start"))(self.choose_initial_mode)
         self.router.message(
             BotTypingHandler.start_mode_choice,
@@ -130,7 +143,7 @@ class BotRouterHandler:
             await state.set_state(BotTypingHandler.start_mode_choice)
             await self.bot.send_message(user_id, self.typing_handler.bot_texts['inactivity_text'],
                                         reply_markup=self.typing_handler.show_keyboard(
-                                        self.typing_handler.keyboards['init']))
+                                            self.typing_handler.keyboards['init']))
 
         if user_id in self.user_timers:
             self.user_timers[user_id].cancel()
@@ -238,17 +251,52 @@ class BotRouterHandler:
         await self.db_handler.modify_settings(user_id, 'word_of_the_day', 'disabled')
         await self.typing_handler.type_reply(message, "Word of the day disabled! Tap /settings or /start to continue")
 
+    async def modify_quiz_words_count(self, message: Message, state: FSMContext):
+        if not await self.user_authorized(message):
+            return
+        await self.set_inactivity_timer(message.from_user.id, state)
+        await self.typing_handler.type_reply(message, self.typing_handler.bot_texts['set_quiz_words_count'])
+        await state.set_state(BotTypingHandler.modify_quiz_words_count)
+
+    async def set_quiz_words_count(self, message: Message, state: FSMContext):
+        if not await self.user_authorized(message):
+            return
+        await self.set_inactivity_timer(message.from_user.id, state)
+        user_id = str(message.from_user.id)
+        words_count = int(message.text)
+        await self.db_handler.modify_settings(user_id, 'quiz_words_count', words_count)
+        await self.typing_handler.type_reply(message, "The new amount is set! Tap /settings or /start to continue")
+        await state.set_state(BotTypingHandler.start_mode_choice)
+
+    async def modify_quiz_exercises_count(self, message: Message, state: FSMContext):
+        if not await self.user_authorized(message):
+            return
+        await self.set_inactivity_timer(message.from_user.id, state)
+        await self.typing_handler.type_reply(message, self.typing_handler.bot_texts['set_quiz_exercises_count'])
+        await state.set_state(BotTypingHandler.modify_quiz_exercises_count)
+
+    async def set_quiz_exercises_count(self, message: Message, state: FSMContext):
+        if not await self.user_authorized(message):
+            return
+        await self.set_inactivity_timer(message.from_user.id, state)
+        user_id = str(message.from_user.id)
+        exercises_count = int(message.text)
+        await self.db_handler.modify_settings(user_id, 'quiz_exercises_count', exercises_count)
+        await self.typing_handler.type_reply(message, "The new amount is set! Tap /settings or /start to continue")
+        await state.set_state(BotTypingHandler.start_mode_choice)
+
     async def show_stats(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):
             return
         await self.set_inactivity_timer(message.from_user.id, state)
         user_id = str(message.from_user.id)
         words_count = await self.db_handler.get_stats(user_id)
-        await self.typing_handler.type_reply(message, f"Here's your progress so far! {emoji.emojize(":party_popper:")}\n\n"
-                                                      f"You've added {words_count[0]} new words!\n"
-                                                      f"Still working on {words_count[1]} words.\n"
-                                                      f"And you’ve mastered {words_count[2]} words already! {emoji.emojize(":flexed_biceps_light_skin_tone:")}\n\n"
-                                                      f"Keep it up, /start when you're ready to continue!")
+        await self.typing_handler.type_reply(message,
+                                             f"Here's your progress so far! {emoji.emojize(":party_popper:")}\n\n"
+                                             f"You've added {words_count[0]} new words!\n"
+                                             f"Still working on {words_count[1]} words.\n"
+                                             f"And you’ve mastered {words_count[2]} words already! {emoji.emojize(":flexed_biceps_light_skin_tone:")}\n\n"
+                                             f"Keep it up, /start when you're ready to continue!")
 
     async def choose_initial_mode(self, message: Message, state: FSMContext):
         if not await self.user_authorized(message):
@@ -370,7 +418,9 @@ class BotRouterHandler:
             words = []
         if not isinstance(words, list):
             words = []
-        if len(words) < 5:
+        user_id = str(message.from_user.id)
+        quiz_words_count = self.db.select_setting(user_id, 'quiz_words_count')
+        if len(words) < int(quiz_words_count):
             await self.quiz_handler.print_quiz_words(mode, message, state, words, 0)
         else:
             await self.typing_handler.type_reply(message, self.typing_handler.bot_texts['words_ended'],
@@ -392,7 +442,9 @@ class BotRouterHandler:
             return
         await self.set_inactivity_timer(message.from_user.id, state)
         words = await self.typing_handler.get_state_info(state, words_key)
-        if len(words) < 5:
+        user_id = str(message.from_user.id)
+        quiz_words_count = self.db.select_setting(user_id, 'quiz_words_count')
+        if len(words) < int(quiz_words_count):
             await self.quiz_handler.print_quiz_words(mode, message, state, words, 1)
         else:
             await self.db_handler.revert_statuses(state)
@@ -411,7 +463,8 @@ class BotRouterHandler:
         if not await self.user_authorized(message):
             return
         await self.set_inactivity_timer(message.from_user.id, state)
-        word_id = await self.quiz_handler.choose_word_for_quiz(state, mode)
+        user_id = str(message.from_user.id)
+        word_id = await self.quiz_handler.choose_word_for_quiz(state, mode, user_id)
         if word_id:
             print_definitions, keyboard = await self.quiz_handler.get_exercise(message, state, word_id)
             await self.typing_handler.type_reply(message, f"{print_definitions}", keyboard)

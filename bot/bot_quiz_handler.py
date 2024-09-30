@@ -11,7 +11,7 @@ class BotQuizHandler:
         self.db_handler = db_handler
         self.db = bot_db
 
-    async def choose_word_for_quiz(self, state, mode):
+    async def choose_word_for_quiz(self, state, mode, user_id):
         if mode == 'learn':
             words_key = 'words_to_learn'
             selection_key = 'words_selection'
@@ -26,7 +26,8 @@ class BotQuizHandler:
         except KeyError:
             words_selection = {element: 0 for element in words}
 
-        max_selections = 3
+        max_selections = int(self.db.select_setting(user_id, 'quiz_exercises_count'))
+        # max_selections = 3
         total_score = len(words_selection) * max_selections
         await state.update_data(total_score=total_score)
 
