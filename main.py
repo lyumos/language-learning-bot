@@ -5,7 +5,7 @@ from logging.handlers import TimedRotatingFileHandler
 from datetime import datetime, timedelta
 from aiogram import Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from bot.bot_routers import BotRouterHandler
+from bot.bot_routers.bot_routers_main import BotRouters
 
 os.makedirs('logs', exist_ok=True)
 
@@ -48,7 +48,7 @@ async def periodic_log_cleanup():
 
 
 async def main():
-    bot_handler = BotRouterHandler()
+    bot_handler = BotRouters()
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(bot_handler.router)
     await dp.start_polling(bot_handler.bot)
