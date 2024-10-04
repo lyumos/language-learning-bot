@@ -3,6 +3,7 @@ from bot.bot_typing_handler import BotTypingHandler
 from bot.bot_db_handler import BotDBHandler
 from db.db import DB
 from dictionary.my_dictionary_collaboration import LanguageProcessing
+from bot.bot_routers.bot_routers_main import BotRouters
 
 
 class BotQuizHandler:
@@ -27,7 +28,6 @@ class BotQuizHandler:
             words_selection = {element: 0 for element in words}
 
         max_selections = int(self.db.select_setting(user_id, 'quiz_exercises_count'))
-        # max_selections = 3
         total_score = len(words_selection) * max_selections
         await state.update_data(total_score=total_score)
 
@@ -45,10 +45,10 @@ class BotQuizHandler:
         try:
             if mode == 'learn':
                 word_status = 'New/Acquainted'
-                next_state = BotTypingHandler.learn_words_choice
+                next_state = BotRouters.learn_words_choice
             else:  # mode == 'repeat'
                 word_status = 'Familiar/Reviewed'
-                next_state = BotTypingHandler.repeat_words_choice
+                next_state = BotRouters.repeat_words_choice
             word_id, word, category, chosen_status = self.db.select_words_by_status(word_status,
                                                                                     user_id=str(message.from_user.id))
             self.db.update_word_status(word_id, 'Shown')
@@ -72,15 +72,15 @@ class BotQuizHandler:
             if flag == 0:
                 await self.bot_typer.type_reply(message, self.bot_typer.bot_texts['no_words_to_learn'],
                                                 self.bot_typer.keyboards['init'])
-                await state.set_state(BotTypingHandler.start_mode_choice)
+                await state.set_state(BotRouters.start_mode_choice)
             else:
                 await self.db_handler.revert_statuses(state)
                 await self.bot_typer.type_reply(message, self.bot_typer.bot_texts['quiz_time'],
                                                 self.bot_typer.keyboards['happy_face'])
                 if mode == 'learn':
-                    await state.set_state(BotTypingHandler.test_start)
+                    await state.set_state(BotRouters.test_start)
                 else:
-                    await state.set_state(BotTypingHandler.repeat_start)
+                    await state.set_state(BotRouters.repeat_start)
 
     async def get_exercise(self, message, state, word_id):
         word_db_info = self.db.select_all_by_word_id(word_id)

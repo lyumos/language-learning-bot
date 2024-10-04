@@ -1,5 +1,4 @@
 from aiogram import types
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.enums import ParseMode
 import emoji
@@ -7,23 +6,7 @@ from dictionary.my_dictionary_collaboration import LanguageProcessing
 from db.db import DB
 
 
-class BotTypingHandler(StatesGroup):
-    start_mode_choice = State()
-    check_word_choice = State()
-    repeat_words_choice = State()
-    learn_words_choice = State()
-    new_word_checking = State()
-    new_word_printing = State()
-    new_word_handling = State()
-    test_start = State()
-    check_test = State()
-    repeat_start = State()
-    check_test_repeat = State()
-    settings_choice = State()
-    modify_daily_reminder = State()
-    modify_word_of_the_day = State()
-    modify_quiz_words_count = State()
-    modify_quiz_exercises_count = State()
+class BotTypingHandler:
 
     def __init__(self, bot_db: DB):
         self.db = bot_db
