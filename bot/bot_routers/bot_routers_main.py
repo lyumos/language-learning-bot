@@ -44,7 +44,7 @@ class BotRouters(StatesGroup):
         from bot.bot_routers.settings_routers import SettingsRouters
         from bot.bot_routers.extra_features_routers import ExtraFeaturesRouters
         word_processing_routers = WordProcessingRouters(self)
-        quiz_routers = QuizRouters(self)
+        quiz_routers = QuizRouters(self.db, self)
         settings_routers = SettingsRouters(self)
         extra_features_routers = ExtraFeaturesRouters(self)
 
